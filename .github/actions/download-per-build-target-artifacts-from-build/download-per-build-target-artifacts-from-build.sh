@@ -45,7 +45,11 @@ for buildTarget in $BUILD_TARGETS; do
 
   mkdir -p "${BUILD_TARGET_DIR}"
 
-  if gh run download --name "${ARTIFACT_NAME}" --dir "${BUILD_TARGET_DIR}"; then
+  if gh run download \
+    --repo "${GITHUB_REPOSITORY}" \
+    --run-id "${GITHUB_RUN_ID}" \
+    --name "${ARTIFACT_NAME}" \
+    --dir "${BUILD_TARGET_DIR}"; then
     echo "✅ Successfully downloaded: ${ARTIFACT_NAME}"
   else
     echo "❌ ERROR: Artifact ${ARTIFACT_NAME} not found or failed to download."
