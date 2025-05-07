@@ -28,6 +28,8 @@ BUILD_TARGETS=$(echo "$BUILD_TARGETS_JSON" | jq -r '.[]')
 # ────────────────────────────
 # Download Per Platform
 # ────────────────────────────
+FAILED_TARGETS=()
+
 for buildTarget in $BUILD_TARGETS; do
   ARTIFACT_NAME="${PROJECT_NAME}-${VERSION}-${buildTarget}"
   BUILD_TARGET_DIR="${DEST_DIR}/${buildTarget}"
@@ -46,10 +48,20 @@ for buildTarget in $BUILD_TARGETS; do
   if gh run download --name "${ARTIFACT_NAME}" --dir "${BUILD_TARGET_DIR}"; then
     echo "✅ Successfully downloaded: ${ARTIFACT_NAME}"
   else
-    echo "⚠️ Warning: Artifact ${ARTIFACT_NAME} not found or failed to download."
+    echo "❌ ERROR: Artifact ${ARTIFACT_NAME} not found or failed to download."
+    FAILED_TARGETS+=("${buildTarget}")
   fi
 done
 
+if [ "${#FAILED_TARGETS[@]}" -gt 0 ]; then
+  echo ""
+  echo "❌ The following required build targets failed to download:"
+  for failed in "${FAILED_TARGETS[@]}"; do
+    echo "   - ${failed}"
+  done
+  exit 1
+fi
+
 echo ""
-echo "✅ All required platform artifacts downloaded into: ${DEST_DIR}"
+echo "✅ Required build targets successfully downloaded into: ${DEST_DIR}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
