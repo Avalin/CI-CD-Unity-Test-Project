@@ -232,20 +232,20 @@ jobs:
       - resolve_build_type
     runs-on: ubuntu-latest
     outputs:
-      release_already_exists: ${{ steps.set.outputs.should_continue }}
+      release_already_existed: ${{ steps.set.outputs.should_continue }}
     steps:
       - id: set
         run: |
-          if [[ "${{ needs.resolve_build_type.outputs.buildType }} == 'preview'" ]]; then
+          if [[ "${{ needs.resolve_build_type.outputs.buildType }}" == "preview" ]]; then
             echo "✅ Preview builds ignore releases - continuing pipeline."
-            echo "release_already_exists=false" >> "$GITHUB_OUTPUT"
-          elif [[ "${{ needs.resolve_versioning.outputs.release_exists }} == 'true'" ]]; then
-            echo "❌ A release already exists for version '${{ needs.resolve_versioning.outputs.version }}'. Stopping pipeline early."
-            echo "release_already_exists=true" >> "$GITHUB_OUTPUT"
+            echo "release_already_existed=false" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ needs.resolve_versioning.outputs.release_exists }}" == "true" ]]; then
+            echo "❌ A release already exists for version '${{ needs.resolve_versioning.outputs.release_exists }}'. Stopping pipeline early."
+            echo "release_already_existed=true" >> "$GITHUB_OUTPUT"
             exit 1
           else
             echo "✅ No existing release detected - continuing pipeline."
-            echo "release_already_exists=false" >> "$GITHUB_OUTPUT"
+            echo "release_already_existed=false" >> "$GITHUB_OUTPUT"
           fi
 
   resolve_build_targets:
