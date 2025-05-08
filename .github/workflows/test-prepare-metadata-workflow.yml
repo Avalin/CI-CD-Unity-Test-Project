@@ -32,6 +32,15 @@ on:
         description: "JSON array of deploy targets (e.g. [\"itch.io\",\"s3\"])"
         required: true
         default: '["steam", "gh-pages"]'
+      quietMode:
+        description: "Enable quiet mode to suppress uploads/logs unless tests fail"
+        required: true
+        default: "default"
+        type: choice
+        options:
+          - "default"
+          - "true"
+          - "false"
 
 permissions:
   contents: read
@@ -48,3 +57,4 @@ jobs:
       deployTargets: ${{ inputs.deployTargets }}
       buildType: ${{ inputs.buildType }}
       buildVersion: ${{ inputs.buildVersion }}
+      quietMode: ${{ inputs.quietMode }}

@@ -36,6 +36,16 @@ on:
         description: Optional version override
         type: string
         required: false
+      quietMode:
+        description: "Enable quiet mode to suppress uploads/logs unless tests fail"
+        required: true
+        default: "default"
+        type: choice
+        options:
+          - "default"
+          - "true"
+          - "false"
+
   # Automatically run tests & builds on certain branches or PR changes
   push:
     tags:
@@ -112,6 +122,7 @@ jobs:
       buildTargets: ${{ inputs.buildTargets }}
       buildType: ${{ inputs.buildType }}
       buildVersion: ${{ inputs.buildVersion }}
+      quietMode: ${{ inputs.quietMode }}
 
   tagging:
     name: Create or Verify Tag

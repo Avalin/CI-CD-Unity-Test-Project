@@ -27,6 +27,9 @@ on:
       combineArtifacts:
         type: string
         required: false
+      quietMode:
+        type: string
+        required: false
     secrets:
       UNITY_EMAIL: { required: true }
       UNITY_PASSWORD: { required: true }

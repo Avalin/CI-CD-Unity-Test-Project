@@ -56,14 +56,6 @@ on:
           - api_failure
           - upload_failure
           - unknown_failure
-      quietMode:
-        description: "Simulate quiet mode"
-        required: false
-        default: 'false'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
 
 permissions:
   contents: write
@@ -81,6 +73,7 @@ jobs:
       deployTargets: ${{ inputs.deployTargets }}
       buildType: ${{ inputs.buildType }}
       buildVersion: ${{ inputs.buildVersion }}
+      quietMode: ${{ vars.QUIET_MODE }}
 
   dry_tests:
     name: 📋 Create Dry-Tests

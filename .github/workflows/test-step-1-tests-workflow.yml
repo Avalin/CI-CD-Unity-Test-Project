@@ -34,9 +34,10 @@ on:
       quietMode:
         description: "Enable quiet mode to suppress uploads/logs unless tests fail"
         required: true
-        default: "false"
+        default: "default"
         type: choice
         options:
+          - "default"
           - "true"
           - "false"
 
@@ -56,6 +57,7 @@ jobs:
       deployTargets: '[]'
       buildType: 'preview'
       buildVersion: 'TESTING_TESTS_WORKFLOW'
+      quietMode: ${{ inputs.quietMode }}
 
   test-run-tests:
     name: 📋 Test Run Tests

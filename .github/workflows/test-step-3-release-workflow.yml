@@ -30,6 +30,15 @@ on:
         required: true
         default: '["steam", "gh-pages"]'
         type: string
+      quietMode:
+        description: "Enable quiet mode to suppress uploads/logs unless tests fail"
+        required: true
+        default: "default"
+        type: choice
+        options:
+          - "default"
+          - "true"
+          - "false"
 
 permissions:
   contents: write
@@ -47,6 +56,7 @@ jobs:
       deployTargets: ${{ inputs.deployTargets }}
       buildType: ${{ inputs.buildType }}
       buildVersion: ${{ inputs.buildVersion }}
+      quietMode: ${{ inputs.quietMode }}
 
   dry_build:
     name: 🧩 Create Dry-Build
