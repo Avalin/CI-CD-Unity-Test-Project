@@ -1,26 +1,48 @@
 {
-    "unity": {
-      "version": "auto",
-      "useGitLfs": false,
-      "editModePath": "Assets/Tests/Editor",
-      "playModePath": "Assets/Tests/PlayMode",
-      "quietMode": false
-    },
-    "timeouts": {
-      "testsInMinutes": 15,
-      "buildInMinutes": 30
-    },
-    "retentionDays": {
-      "preview": 7,
-      "release_candidate": 14,
-      "release": 30
-    },
-    "targets": {
-      "defaultBuildTargets": ["WebGL"],
-      "defaultDeployTargets": ["gh-pages"]
-    },
-    "skip": {
-      "excludeUnityTests": false
-    }
+  "unity": {
+    "version": "auto",
+    "useGitLfs": false,
+    "editModePath": "Assets/Tests/Editor",
+    "playModePath": "Assets/Tests/PlayMode",
+    "quietMode": false
+  },
+  "project": {
+    "name": "My_Project"
+  },
+  "timeouts": {
+    "testsInMinutes": 15,
+    "buildInMinutes": 30
+  },
+  "retentionDays": {
+    "preview": 7,
+    "release_candidate": 14,
+    "release": 30
+  },
+  "targets": {
+    "defaultBuildTargets": ["WebGL"],
+    "defaultDeployTargets": ["gh-pages"],
+    "availableBuildTargets": [
+      "Android",
+      "WebGL",
+      "StandaloneLinux64",
+      "StandaloneWindows",
+      "StandaloneWindows64",
+      "StandaloneOSX",
+      "iOS"
+    ],
+    "availableDeployTargets": [
+      "itch.io",
+      "appcenter",
+      "firebase",
+      "s3",
+      "gh-pages",
+      "steam",
+      "testflight",
+      "custom-server"
+    ]
+  },
+  "pipeline": {
+    "forceCombineArtifacts": false,
+    "excludeUnityTests": false
+  }
 }
-  
