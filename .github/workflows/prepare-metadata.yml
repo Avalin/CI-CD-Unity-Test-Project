@@ -163,7 +163,7 @@ jobs:
 
       - name: Use Resolve Unity Version Action
         id: resolve_unity_version
-        uses: avalin/unity-ci-templates/.github/actions/resolve-unity-version@main
+        uses: avalin/unity-ci-templates/.github/actions/resolve-unity-version@v1
         with:
           unityVersionOverride: ${{ inputs.unityVersion || vars.UNITY_VERSION }}
 
@@ -188,7 +188,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Use Resolve Test Config Action
-        uses: avalin/unity-ci-templates/.github/actions/resolve-test-config@main
+        uses: avalin/unity-ci-templates/.github/actions/resolve-test-config@v1
         with:
           defaultsFileOverride: "./.github/config/defaults.json"
           useGitLfsOverride: ${{ vars.USE_GIT_LFS }}

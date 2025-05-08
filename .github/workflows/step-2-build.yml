@@ -99,7 +99,7 @@ jobs:
 
       - name: Resolve Build Profile
         id: resolve_build_profile
-        uses: avalin/unity-ci-templates/.github/actions/resolve-build-profile@main
+        uses: avalin/unity-ci-templates/.github/actions/resolve-build-profile@v1
         with:
           buildTarget: ${{ matrix.buildTarget }}
           buildType: ${{ inputs.buildType }}
