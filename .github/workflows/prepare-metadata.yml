@@ -31,6 +31,9 @@ on:
       testsOnly:
         type: string
         required: false
+      quietMode:
+        type: string
+        required: false
     outputs:
       projectName:
         value: ${{ jobs.resolve_project_name.outputs.sanitized_name }}
