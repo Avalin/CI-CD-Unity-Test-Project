@@ -33,7 +33,7 @@ on:
         required: false
       quietMode:
         type: string
-        required: false
+        required: true
     outputs:
       projectName:
         value: ${{ jobs.resolve_project_name.outputs.sanitized_name }}
