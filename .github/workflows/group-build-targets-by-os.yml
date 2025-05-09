@@ -1,4 +1,4 @@
-name: 🧮 Validate & Filter Build Targets
+name: 📚 Group Build Targets By OS
 
 on:
   workflow_call:

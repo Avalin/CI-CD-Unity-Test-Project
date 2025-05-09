@@ -1,16 +1,21 @@
-name: Sanitize Project Name
-description: Takes a raw project name and outputs a safe, sanitized name.
+name: Resolve Project Name
+description: Resolves and sanitizes project name with layered priority logic.
 
 inputs:
-  projectName:
-    description: The raw project name to sanitize
-    required: true
-    type: string
+  projectNameInput:
+    description: Input override for project name
+    required: false
+  projectNameRepoVar:
+    description: Repository variable fallback for project name
+    required: false
+  defaultsFileOverride:
+    description: Optional custom defaults.json path (workspace-relative)
+    required: false
 
 outputs:
   sanitized_name:
-    description: The sanitized project name with only a-zA-Z0-9._- characters
-    value: ${{ steps.sanitize_name.outputs.sanitized_name }}
+    description: The sanitized project name
+    value: ${{ steps.resolve.outputs.sanitized_name }}
 
 runs:
   using: composite
@@ -19,8 +24,12 @@ runs:
       shell: bash
       run: chmod +x "${{ github.action_path }}/resolve-project-name.sh"
 
-    - name: Run sanitizer script
-      id: sanitize_name
+    - id: resolve
       shell: bash
+      env:
+        INPUT_NAME: ${{ inputs.projectNameInput }}
+        REPO_VAR_NAME: ${{ inputs.projectNameRepoVar }}
+        DEFAULTS_FILE_OVERRIDE: ${{ inputs.defaultsFileOverride }}
+        ACTION_DEFAULTS_FILE: ${{ github.action_path }}/defaults.json
       run: |
-        ${{ github.action_path }}/resolve-project-name.sh "${{ inputs.projectName }}"
+        bash "${{ github.action_path }}/resolve-project-name.sh"

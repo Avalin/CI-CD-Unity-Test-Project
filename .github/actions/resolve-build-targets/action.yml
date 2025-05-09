@@ -1,0 +1,41 @@
+name: Resolve Build Targets
+description: Resolves and validates build targets using layered input priority and build-targets.json rules.
+
+inputs:
+  buildType:
+    description: The resolved build type (preview, release_candidate, release)
+    required: true
+  buildTargetsInput:
+    description: JSON array string of requested build targets (["WebGL", "Android"])
+    required: false
+  buildTargetsRepoVar:
+    description: Repository variable fallback for build targets
+    required: false
+  defaultsFileOverride:
+    description: Optional project-level defaults.json override path
+    required: false
+  buildTargetsFileOverride:
+    description: Optional override path for build-targets.json (validation rules)
+    required: false
+
+outputs:
+  buildTargets:
+    description: JSON array string of validated build targets
+    value: ${{ steps.set.outputs.validatedBuildTargets }}
+
+runs:
+  using: composite
+  steps:
+    - id: set
+      shell: bash
+      env:
+        BUILD_TYPE: ${{ inputs.buildType }}
+        BUILDTARGETS_INPUT: ${{ inputs.buildTargetsInput }}
+        BUILDTARGETS_REPOVAR: ${{ inputs.buildTargetsRepoVar }}
+        PROJECT_DEFAULTS_FILE: ${{ inputs.defaultsFileOverride || '.github/config/defaults.json' }}
+        ACTION_DEFAULTS_FILE: ${{ github.action_path }}/defaults.json
+        PROJECT_BUILD_TARGETS_FILE: ${{ inputs.buildTargetsFileOverride || '.github/config/build-targets.json' }}
+        ACTION_BUILD_TARGETS_FILE: ${{ github.action_path }}/build-targets.json
+      run: |
+        chmod +x "${{ github.action_path }}/resolve-build-targets.sh"
+        bash "${{ github.action_path }}/resolve-build-targets.sh"

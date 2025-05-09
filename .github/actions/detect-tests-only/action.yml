@@ -1,0 +1,36 @@
+name: Detect Tests-Only Run
+description: Detects if the workflow is running in tests-only mode.
+
+inputs:
+  testsOnlyInput:
+    description: Explicit override input for testsOnly (true/false)
+    required: false
+
+outputs:
+  testsOnly:
+    description: Final testsOnly decision (true/false)
+    value: ${{ steps.detect.outputs.testsOnly }}
+
+runs:
+  using: composite
+  steps:
+    - id: detect
+      shell: bash
+      env:
+        INPUT_TESTS_ONLY: ${{ inputs.testsOnlyInput }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GITHUB_EVENT_ACTION: ${{ github.event.action }}
+      run: |
+        IS_TESTS_ONLY="false"
+
+        if [[ "$INPUT_TESTS_ONLY" == "true" ]]; then
+          IS_TESTS_ONLY="true"
+        fi
+
+        if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+          if [[ "$GITHUB_EVENT_ACTION" == "ready_for_review" || "$GITHUB_EVENT_ACTION" == "synchronize" || "$GITHUB_EVENT_ACTION" == "reopened" ]]; then
+            IS_TESTS_ONLY="true"
+          fi
+        fi
+
+        echo "testsOnly=$IS_TESTS_ONLY" >> "$GITHUB_OUTPUT"

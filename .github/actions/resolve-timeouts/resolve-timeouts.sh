@@ -1,32 +1,117 @@
 #!/bin/bash
 set -e
 
-# Pick override or bundled defaults.json
-DEFAULTS_FILE="${DEFAULTS_FILE_OVERRIDE:-$GITHUB_ACTION_PATH/defaults.json}"
+echo "🔍 Resolving timeouts from multiple layers..."
 
-if [[ ! -f "$DEFAULTS_FILE" ]]; then
-  echo "❌ Defaults file not found at $DEFAULTS_FILE. Falling back to action-specific defaults."
-  DEFAULTS_FILE="$GITHUB_ACTION_PATH/defaults.json"
-  if [[ ! -f "$DEFAULTS_FILE" ]]; then
-    echo "❌ Defaults file not found in the action folder. Exiting."
+# Load config files
+PROJECT_DEFAULTS_FILE="${PROJECT_DEFAULTS_FILE:-.github/config/defaults.json}"
+ACTION_DEFAULTS_FILE="${ACTION_DEFAULTS_FILE:-$GITHUB_ACTION_PATH/defaults.json}"
+
+if [[ ! -f "$PROJECT_DEFAULTS_FILE" ]]; then
+  echo "⚠️ Project defaults file not found at $PROJECT_DEFAULTS_FILE."
+fi
+
+if [[ ! -f "$ACTION_DEFAULTS_FILE" ]]; then
+  echo "❌ Action defaults file not found at $ACTION_DEFAULTS_FILE. Exiting."
+  exit 1
+fi
+
+PROJECT_DEFAULTS=$( [[ -f "$PROJECT_DEFAULTS_FILE" ]] && cat "$PROJECT_DEFAULTS_FILE" || echo '{}' )
+ACTION_DEFAULTS=$(cat "$ACTION_DEFAULTS_FILE")
+
+PROJECT_TESTS_TIMEOUT=$(echo "$PROJECT_DEFAULTS" | jq -r '.timeouts.testsInMinutes // empty')
+PROJECT_BUILD_TIMEOUT=$(echo "$PROJECT_DEFAULTS" | jq -r '.timeouts.buildInMinutes // empty')
+ACTION_TESTS_TIMEOUT=$(echo "$ACTION_DEFAULTS" | jq -r '.timeouts.testsInMinutes // empty')
+ACTION_BUILD_TIMEOUT=$(echo "$ACTION_DEFAULTS" | jq -r '.timeouts.buildInMinutes // empty')
+
+validate_timeout() {
+  local val="$1"
+  if [[ "$val" =~ ^[0-9]+$ && "$val" -gt 0 ]]; then
+    echo "$val"
+    return 0
+  fi
+  return 1
+}
+
+# Resolve test timeout
+if [[ -n "$TIMEOUT_TESTS_INPUT" ]]; then
+  if resolved=$(validate_timeout "$TIMEOUT_TESTS_INPUT"); then
+    echo "✅ Using test timeout from input: $resolved"
+    timeoutTests="$resolved"
+  else
+    echo "⚠️ Invalid test timeout input: $TIMEOUT_TESTS_INPUT"
+  fi
+fi
+
+if [[ -z "$timeoutTests" && -n "$TIMEOUT_TESTS_REPO_VAR" ]]; then
+  if resolved=$(validate_timeout "$TIMEOUT_TESTS_REPO_VAR"); then
+    echo "✅ Using test timeout from repo var: $resolved"
+    timeoutTests="$resolved"
+  else
+    echo "⚠️ Invalid test timeout repo var: $TIMEOUT_TESTS_REPO_VAR"
+  fi
+fi
+
+if [[ -z "$timeoutTests" && -n "$PROJECT_TESTS_TIMEOUT" ]]; then
+  if resolved=$(validate_timeout "$PROJECT_TESTS_TIMEOUT"); then
+    echo "✅ Using test timeout from project config: $resolved"
+    timeoutTests="$resolved"
+  else
+    echo "⚠️ Invalid project test timeout: $PROJECT_TESTS_TIMEOUT"
+  fi
+fi
+
+if [[ -z "$timeoutTests" && -n "$ACTION_TESTS_TIMEOUT" ]]; then
+  if resolved=$(validate_timeout "$ACTION_TESTS_TIMEOUT"); then
+    echo "✅ Using test timeout from action fallback: $resolved"
+    timeoutTests="$resolved"
+  else
+    echo "❌ Invalid action fallback test timeout: $ACTION_TESTS_TIMEOUT"
     exit 1
   fi
 fi
 
-DEFAULTS=$(cat "$DEFAULTS_FILE")
+# Resolve build timeout
+if [[ -n "$TIMEOUT_BUILD_INPUT" ]]; then
+  if resolved=$(validate_timeout "$TIMEOUT_BUILD_INPUT"); then
+    echo "✅ Using build timeout from input: $resolved"
+    timeoutBuild="$resolved"
+  else
+    echo "⚠️ Invalid build timeout input: $TIMEOUT_BUILD_INPUT"
+  fi
+fi
 
-# Load default timeouts from config
-DEFAULT_TESTS_TIMEOUT=$(echo "$DEFAULTS" | jq -r '.timeouts.testsInMinutes')
-DEFAULT_BUILD_TIMEOUT=$(echo "$DEFAULTS" | jq -r '.timeouts.buildInMinutes')
+if [[ -z "$timeoutBuild" && -n "$TIMEOUT_BUILD_REPO_VAR" ]]; then
+  if resolved=$(validate_timeout "$TIMEOUT_BUILD_REPO_VAR"); then
+    echo "✅ Using build timeout from repo var: $resolved"
+    timeoutBuild="$resolved"
+  else
+    echo "⚠️ Invalid build timeout repo var: $TIMEOUT_BUILD_REPO_VAR"
+  fi
+fi
 
-# Apply overrides if provided via env vars
-TIMEOUT_TESTS="${TIMEOUT_TESTS_OVERRIDE:-$DEFAULT_TESTS_TIMEOUT}"
-TIMEOUT_BUILD="${TIMEOUT_BUILD_OVERRIDE:-$DEFAULT_BUILD_TIMEOUT}"
+if [[ -z "$timeoutBuild" && -n "$PROJECT_BUILD_TIMEOUT" ]]; then
+  if resolved=$(validate_timeout "$PROJECT_BUILD_TIMEOUT"); then
+    echo "✅ Using build timeout from project config: $resolved"
+    timeoutBuild="$resolved"
+  else
+    echo "⚠️ Invalid project build timeout: $PROJECT_BUILD_TIMEOUT"
+  fi
+fi
 
-# Output to GitHub
-echo "timeoutMinutesTests=$TIMEOUT_TESTS" >> "$GITHUB_OUTPUT"
-echo "timeoutMinutesBuild=$TIMEOUT_BUILD" >> "$GITHUB_OUTPUT"
+if [[ -z "$timeoutBuild" && -n "$ACTION_BUILD_TIMEOUT" ]]; then
+  if resolved=$(validate_timeout "$ACTION_BUILD_TIMEOUT"); then
+    echo "✅ Using build timeout from action fallback: $resolved"
+    timeoutBuild="$resolved"
+  else
+    echo "❌ Invalid action fallback build timeout: $ACTION_BUILD_TIMEOUT"
+    exit 1
+  fi
+fi
 
-# Optional: Print summary
-echo "✅ Resolved test timeout: $TIMEOUT_TESTS minutes"
-echo "✅ Resolved build timeout: $TIMEOUT_BUILD minutes"
+# Final outputs
+echo "timeoutMinutesTests=$timeoutTests" >> "$GITHUB_OUTPUT"
+echo "timeoutMinutesBuild=$timeoutBuild" >> "$GITHUB_OUTPUT"
+
+echo "✅ Final resolved test timeout: $timeoutTests minutes"
+echo "✅ Final resolved build timeout: $timeoutBuild minutes"

@@ -1,0 +1,161 @@
+name: Prepare Metadata
+description: Bundles all key resolvers into one unified action, reducing repeated checkouts.
+
+inputs:
+  artifactSource:
+    required: true
+  projectNameInput:
+    required: true
+  projectNameRepoVar:
+    required: true
+  unityVersionInput:
+    required: false
+  unityVersionRepoVar:
+    required: false
+  buildTypeInput:
+    required: false
+  buildTargetsInput:
+    required: false
+  buildTargetsRepoVar:
+    required: false
+  retentionDaysReleaseRepoVar:
+    required: false
+  retentionDaysRcRepoVar:
+    required: false
+  retentionDaysPreviewRepoVar:
+    required: false
+  timeoutTestsInput:
+    required: false
+  timeoutTestsRepoVar:
+    required: false
+  timeoutBuildInput:
+    required: false
+  timeoutBuildRepoVar:
+    required: false
+  deployTargetsInput:
+    required: false
+  deployTargetsRepoVar:
+    required: false
+  useGitLfsInput:
+    required: false
+  useGitLfsRepoVar:
+    required: false
+  editModePathInput:
+    required: false
+  editModePathRepoVar:
+    required: false
+  playModePathInput:
+    required: false
+  playModePathRepoVar:
+    required: false
+  quietModeInput:
+    required: false
+  quietModeRepoVar:
+    required: false
+
+outputs:
+  projectName:
+    value: ${{ steps.project_name.outputs.sanitized_name }}
+  unityVersion:
+    value: ${{ steps.unity_version.outputs.unityVersion }}
+  buildType:
+    value: ${{ steps.build_type.outputs.buildType }}
+  timeoutMinutesTests:
+    value: ${{ steps.timeouts.outputs.timeoutMinutesTests }}
+  timeoutMinutesBuild:
+    value: ${{ steps.timeouts.outputs.timeoutMinutesBuild }}
+  retentionDays:
+    value: ${{ steps.retention.outputs.retentionDays }}
+  buildTargets:
+    value: ${{ steps.build_targets.outputs.buildTargets }}
+  deployTargets:
+    value: ${{ steps.deploy_targets.outputs.deployTargets }}
+  requiresCombinedArtifact:
+    value: ${{ steps.artifact_strategy.outputs.requiresCombined }}
+  skipPerBuildTargetArtifact:
+    value: ${{ steps.artifact_strategy.outputs.skipPerBuildTarget }}
+  useGitLfs:
+    value: ${{ steps.test_config.outputs.useGitLfs }}
+  editModePath:
+    value: ${{ steps.test_config.outputs.editModePath }}
+  playModePath:
+    value: ${{ steps.test_config.outputs.playModePath }}
+  quietMode:
+    value: ${{ steps.test_config.outputs.quietMode }}
+
+runs:
+  using: composite
+  steps:
+    - name: 📦 Resolve Project Name
+      id: project_name
+      uses: avalin/unity-ci-templates/.github/actions/resolve-project-name@main
+      with:
+        projectNameInput: ${{ inputs.projectNameInput }}
+        projectNameRepoVar: ${{ inputs.projectNameRepoVar }}
+
+    - name: 📦 Resolve Unity Version
+      id: unity_version
+      uses: avalin/unity-ci-templates/.github/actions/resolve-unity-version@main
+      with:
+        unityVersionInput: ${{ inputs.unityVersionInput }}
+        unityVersionRepoVar: ${{ inputs.unityVersionRepoVar }}
+
+    - name: 📦 Resolve Test Config
+      id: test_config
+      uses: avalin/unity-ci-templates/.github/actions/resolve-test-config@main
+      with:
+        useGitLfsInput: ${{ inputs.useGitLfsInput }}
+        useGitLfsRepoVar: ${{ inputs.useGitLfsRepoVar }}
+        editModePathInput: ${{ inputs.editModePathInput }}
+        editModePathRepoVar: ${{ inputs.editModePathRepoVar }}
+        playModePathInput: ${{ inputs.playModePathInput }}
+        playModePathRepoVar: ${{ inputs.playModePathRepoVar }}
+        quietModeInput: ${{ inputs.quietModeInput }}
+        quietModeRepoVar: ${{ inputs.quietModeRepoVar }}
+
+    - name: 📦 Resolve Build Type
+      id: build_type
+      uses: avalin/unity-ci-templates/.github/actions/resolve-build-type@main
+      with:
+        buildTypeOverride: ${{ inputs.buildTypeInput }}
+
+    - name: 📦 Resolve Timeouts
+      id: timeouts
+      uses: avalin/unity-ci-templates/.github/actions/resolve-timeouts@main
+      with:
+        timeoutTestsInput: ${{ inputs.timeoutTestsInput }}
+        timeoutTestsRepoVar: ${{ inputs.timeoutTestsRepoVar }}
+        timeoutBuildInput: ${{ inputs.timeoutBuildInput }}
+        timeoutBuildRepoVar: ${{ inputs.timeoutBuildRepoVar }}
+
+    - name: 📦 Resolve Retention Days
+      id: retention
+      uses: avalin/unity-ci-templates/.github/actions/resolve-retention-days@main
+      with:
+        buildType: ${{ steps.build_type.outputs.buildType }}
+        retentionDaysReleaseRepoVar: ${{ inputs.retentionDaysReleaseRepoVar }}
+        retentionDaysRcRepoVar: ${{ inputs.retentionDaysRcRepoVar }}
+        retentionDaysPreviewRepoVar: ${{ inputs.retentionDaysPreviewRepoVar }}
+
+    - name: 📦 Resolve Build Targets
+      id: build_targets
+      uses: avalin/unity-ci-templates/.github/actions/resolve-build-targets@main
+      with:
+        buildType: ${{ steps.build_type.outputs.buildType }}
+        buildTargetsInput: ${{ inputs.buildTargetsInput }}
+        buildTargetsRepoVar: ${{ inputs.buildTargetsRepoVar }}
+
+    - name: 📦 Resolve Deploy Targets
+      id: deploy_targets
+      uses: avalin/unity-ci-templates/.github/actions/validate-deploy-targets@main
+      with:
+        buildType: ${{ steps.build_type.outputs.buildType }}
+        buildTargets: ${{ steps.build_targets.outputs.buildTargets }}
+        deployTargets: ${{ inputs.deployTargetsInputs || inputs.deployTargetsRepoVar || '[]'}}
+
+    - name: 📦 Analyze Artifact Strategy
+      id: artifact_strategy
+      uses: avalin/unity-ci-templates/.github/actions/analyze-artifact-strategy@main
+      with:
+        deployTargets: ${{ steps.deploy_targets.outputs.deployTargets }}
+        artifactSource: ${{ inputs.artifactSource }}

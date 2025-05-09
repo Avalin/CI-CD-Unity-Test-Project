@@ -1,0 +1,34 @@
+name: Validate Deploy Targets
+description: Validates provided deploy targets against config and build type.
+
+inputs:
+  buildType:
+    description: Build type (preview | release_candidate | release)
+    required: true
+  buildTargets:
+    description: JSON array string of build targets
+    required: true
+  deployTargets:
+    description: JSON array string of deploy targets
+    required: true
+
+outputs:
+  deployTargets:
+    description: JSON array of validated deploy targets
+    value: ${{ steps.validate.outputs.validDeployTargets }}
+  skipAnalysis:
+    description: Whether to skip further artifact analysis
+    value: ${{ steps.validate.outputs.skipAnalysis }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: ✅ Validate Deploy Targets
+      id: validate
+      shell: bash
+      run: |
+        chmod +x "${{ github.action_path }}/validate-deploy-targets.sh"
+        "${{ github.action_path }}/validate-deploy-targets.sh" \
+          '${{ inputs.deployTargets }}' \
+          '${{ inputs.buildType }}' \
+          '${{ inputs.buildTargets }}'

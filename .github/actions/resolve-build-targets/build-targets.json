@@ -1,0 +1,30 @@
+{
+  "Android": {
+    "os": "ubuntu-latest",
+    "minimumBuildType": "preview"
+  },
+  "WebGL": {
+    "os": "ubuntu-latest",
+    "minimumBuildType": "preview"
+  },
+  "StandaloneLinux64": {
+    "os": "ubuntu-latest",
+    "minimumBuildType": "preview"
+  },
+  "StandaloneWindows": {
+    "os": "ubuntu-latest",
+    "minimumBuildType": "preview"
+  },
+  "StandaloneWindows64": {
+    "os": "ubuntu-latest",
+    "minimumBuildType": "preview"
+  },
+  "StandaloneOSX": {
+    "os": "macos-latest",
+    "minimumBuildType": "preview"
+  },
+  "iOS": {
+    "os": "macos-latest",
+    "minimumBuildType": "preview"
+  }
+}

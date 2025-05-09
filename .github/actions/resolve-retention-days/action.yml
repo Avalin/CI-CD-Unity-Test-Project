@@ -5,6 +5,7 @@ inputs:
   buildType:
     description: The resolved build type (preview, release_candidate, release)
     required: true
+
   retentionDaysReleaseOverride:
     description: Override for release retention days
     required: false
@@ -14,8 +15,19 @@ inputs:
   retentionDaysPreviewOverride:
     description: Override for preview retention days
     required: false
+
+  retentionDaysReleaseRepoVar:
+    description: Repo-level fallback for release retention days
+    required: false
+  retentionDaysRcRepoVar:
+    description: Repo-level fallback for release candidate retention days
+    required: false
+  retentionDaysPreviewRepoVar:
+    description: Repo-level fallback for preview retention days
+    required: false
+
   defaultsFileOverride:
-    description: 'Optional path (in your workspace) to a custom defaults.json'
+    description: Optional path (in your workspace) to a custom defaults.json
     required: false
 
 outputs:
@@ -24,7 +36,7 @@ outputs:
     value: ${{ steps.set.outputs.retentionDays }}
 
 runs:
-  using: "composite"
+  using: composite
   steps:
     - name: Make script executable
       shell: bash
@@ -33,9 +45,14 @@ runs:
     - id: set
       shell: bash
       env:
-        DEFAULTS_FILE_OVERRIDE: ${{ inputs.defaultsFileOverride }}
-        RETENTION_DAYS_RELEASE_OVERRIDE: ${{ inputs.retentionDaysReleaseOverride }}
-        RETENTION_DAYS_RC_OVERRIDE: ${{ inputs.retentionDaysRcOverride }}
-        RETENTION_DAYS_PREVIEW_OVERRIDE: ${{ inputs.retentionDaysPreviewOverride }}
+        INPUT_BUILD_TYPE: ${{ inputs.buildType }}
+        INPUT_DEFAULTS_FILE_OVERRIDE: ${{ inputs.defaultsFileOverride }}
+        INPUT_RETENTION_DAYS_RELEASE_OVERRIDE: ${{ inputs.retentionDaysReleaseOverride }}
+        INPUT_RETENTION_DAYS_RC_OVERRIDE: ${{ inputs.retentionDaysRcOverride }}
+        INPUT_RETENTION_DAYS_PREVIEW_OVERRIDE: ${{ inputs.retentionDaysPreviewOverride }}
+        INPUT_RETENTION_DAYS_RELEASE_REPO_VAR: ${{ inputs.retentionDaysReleaseRepoVar }}
+        INPUT_RETENTION_DAYS_RC_REPO_VAR: ${{ inputs.retentionDaysRcRepoVar }}
+        INPUT_RETENTION_DAYS_PREVIEW_REPO_VAR: ${{ inputs.retentionDaysPreviewRepoVar }}
+        ACTION_DEFAULTS_FILE: ${{ github.action_path }}/defaults.json
       run: |
-        bash "${{ github.action_path }}/resolve-retention-days.sh" "${{ inputs.buildType }}"
+        bash "${{ github.action_path }}/resolve-retention-days.sh" "${INPUT_BUILD_TYPE}"

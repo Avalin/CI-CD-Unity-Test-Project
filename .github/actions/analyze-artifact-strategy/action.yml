@@ -1,0 +1,30 @@
+name: Analyze Artifact Strategy
+description: Determines if any deploy target requires combined artifacts and whether per-build-target artifacts can be skipped.
+
+inputs:
+  deployTargets:
+    description: JSON array of deploy targets (["steam","itch.io"])
+    required: true
+  artifactSource:
+    description: Artifact source, e.g., "build" or "release"
+    required: true
+
+outputs:
+  requiresCombined:
+    description: Whether combined artifacts are required
+    value: ${{ steps.analyze.outputs.requiresCombined }}
+  skipPerBuildTarget:
+    description: Whether per-build-target artifacts can be skipped
+    value: ${{ steps.analyze.outputs.skipPerBuildTarget }}
+
+runs:
+  using: composite
+  steps:
+    - name: ⚖️ Analyze Artifact Strategy
+      id: analyze
+      shell: bash
+      run: |
+        chmod +x "${{ github.action_path }}/analyze-artifact-strategy.sh"
+        "${{ github.action_path }}/analyze-artifact-strategy.sh" \
+          '${{ inputs.deployTargets }}' \
+          '${{ inputs.artifactSource }}'

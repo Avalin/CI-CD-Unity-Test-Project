@@ -1,0 +1,16 @@
+{
+  "targets": {
+    "defaultBuildTargets": [
+      "WebGL"
+    ],
+    "availableBuildTargets": [
+      "Android",
+      "WebGL",
+      "StandaloneLinux64",
+      "StandaloneWindows",
+      "StandaloneWindows64",
+      "StandaloneOSX",
+      "iOS"
+    ]
+  }
+}

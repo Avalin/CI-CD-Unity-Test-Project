@@ -2,9 +2,11 @@
   "unity": {
     "version": "auto",
     "useGitLfs": false,
-    "editModePath": "Assets/Tests/Editor",
-    "playModePath": "Assets/Tests/PlayMode",
     "quietMode": false
+  },
+  "unityTests": {
+    "editModePath": "Assets/Tests/Editor",
+    "playModePath": "Assets/Tests/PlayMode"
   },
   "project": {
     "name": "My_Project"
@@ -19,8 +21,12 @@
     "release": 30
   },
   "targets": {
-    "defaultBuildTargets": ["WebGL"],
-    "defaultDeployTargets": ["gh-pages"],
+    "defaultBuildTargets": [
+      "WebGL"
+    ],
+    "defaultDeployTargets": [
+      "gh-pages"
+    ],
     "availableBuildTargets": [
       "Android",
       "WebGL",

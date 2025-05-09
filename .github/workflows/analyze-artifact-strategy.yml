@@ -21,7 +21,7 @@ on:
 
 jobs:
   analyze:
-    name: 🧠 Analyze Deploy Targets & Strategy
+    name: ⚖️ Analyze Artifact Strategy
     runs-on: ubuntu-latest
     outputs:
       requiresCombined: ${{ steps.analyze.outputs.requiresCombined }}
@@ -34,7 +34,7 @@ jobs:
           sparse-checkout-cone-mode: false
           fetch-depth: 1
     
-      - name: 🧰 Analyze Targets
+      - name: 🔍 Analyze Targets
         id: analyze
         run: |
           CONFIG_FILE=".github/config/deploy-targets.json"

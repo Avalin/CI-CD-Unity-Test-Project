@@ -1,23 +1,33 @@
 name: Resolve Unity Version
-description: Resolves Unity test config values from overrides or defaults.json
+description: Resolves the Unity version from input, repo var, project config, or action fallback.
 
 inputs:
-  unityVersionOverride:
-    description: Override for Unity version
+  unityVersionInput:
+    description: Direct input override
     required: false
+  unityVersionRepoVar:
+    description: Repository variable fallback
+    required: false
+  projectDefaultsFile:
+    description: Path to project defaults file
+    required: false
+    default: .github/config/defaults.json
 
 outputs:
   unityVersion:
-    description: Resolved Unity version
-    value: ${{ steps.set.outputs.unityVersion }}
+    description: Final resolved Unity version
+    value: ${{ steps.resolve.outputs.unityVersion }}
 
 runs:
-  using: "composite"
+  using: composite
   steps:
-    - id: set
+    - id: resolve
       shell: bash
       env:
-        UNITY_VERSION_OVERRIDE: ${{ inputs.unityVersionOverride }}
+        UNITY_VERSION_INPUT: ${{ inputs.unityVersionInput }}
+        UNITY_VERSION_REPO_VAR: ${{ inputs.unityVersionRepoVar }}
+        PROJECT_DEFAULTS_FILE: ${{ inputs.projectDefaultsFile }}
+        ACTION_DEFAULTS_FILE: ${{ github.action_path }}/defaults.json
       run: |
         chmod +x "${{ github.action_path }}/resolve-unity-version.sh"
         bash "${{ github.action_path }}/resolve-unity-version.sh"

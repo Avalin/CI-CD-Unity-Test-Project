@@ -7,7 +7,10 @@ on:
         description: "Specific unity version to test on"
         required: false
         default: "auto"
-        type: string      
+        type: string
+      projectName:
+        description: "Optional project name"
+        required: false
       buildVersion:
         description: "Optional base version (e.g., v1.2.3) for release candidate"
         required: false
@@ -52,7 +55,7 @@ jobs:
     uses: ./.github/workflows/prepare-metadata.yml
     with:
       unityVersion: ${{ inputs.unityVersion }}
-      projectName: ${{ vars.PROJECT_NAME }}
+      projectName: ${{ inputs.projectName }}
       skipTests: ${{ inputs.skipTests }}
       deployTargets: ${{ inputs.deployTargets }}
       buildType: ${{ inputs.buildType }}

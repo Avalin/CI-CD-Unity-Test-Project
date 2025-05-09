@@ -1,38 +1,47 @@
 name: Resolve Timeouts
-description: Resolves test/build timeout values from overrides or defaults.json
+description: Resolves test/build timeouts from input, repo var, project config, or action fallback.
 
 inputs:
-  timeoutTestsOverride:
-    description: Override for test timeout (in minutes)
+  timeoutTestsInput:
+    description: Direct input override for test timeout (minutes)
     required: false
-  timeoutBuildOverride:
-    description: Override for build timeout (in minutes)
+  timeoutTestsRepoVar:
+    description: Repository variable fallback for test timeout
     required: false
-  defaultsFileOverride:
-    description: 'Optional path (in your workspace) to an alternate defaults.json'
+  timeoutBuildInput:
+    description: Direct input override for build timeout (minutes)
     required: false
+  timeoutBuildRepoVar:
+    description: Repository variable fallback for build timeout
+    required: false
+  projectDefaultsFile:
+    description: Optional path to project-level defaults.json
+    required: false
+    default: .github/config/defaults.json
 
 outputs:
   timeoutMinutesTests:
-    description: Resolved test timeout
-    value: ${{ steps.set.outputs.timeoutMinutesTests }}
+    description: Final resolved test timeout
+    value: ${{ steps.resolve.outputs.timeoutMinutesTests }}
   timeoutMinutesBuild:
-    description: Resolved build timeout
-    value: ${{ steps.set.outputs.timeoutMinutesBuild }}
+    description: Final resolved build timeout
+    value: ${{ steps.resolve.outputs.timeoutMinutesBuild }}
 
 runs:
-  using: "composite"
+  using: composite
   steps:
     - name: Make script executable
       shell: bash
       run: chmod +x "${{ github.action_path }}/resolve-timeouts.sh"
 
-    - id: set
+    - id: resolve
       name: Determine timeouts
       shell: bash
       env:
-        DEFAULTS_FILE_OVERRIDE:  ${{ inputs.defaultsFileOverride }}
-        TIMEOUT_TESTS_OVERRIDE:  ${{ inputs.timeoutTestsOverride }}
-        TIMEOUT_BUILD_OVERRIDE:  ${{ inputs.timeoutBuildOverride }}
-      run: |
-        bash "${{ github.action_path }}/resolve-timeouts.sh"
+        TIMEOUT_TESTS_INPUT:    ${{ inputs.timeoutTestsInput }}
+        TIMEOUT_TESTS_REPO_VAR: ${{ inputs.timeoutTestsRepoVar }}
+        TIMEOUT_BUILD_INPUT:    ${{ inputs.timeoutBuildInput }}
+        TIMEOUT_BUILD_REPO_VAR: ${{ inputs.timeoutBuildRepoVar }}
+        PROJECT_DEFAULTS_FILE:  ${{ inputs.projectDefaultsFile }}
+        ACTION_DEFAULTS_FILE:   ${{ github.action_path }}/defaults.json
+      run: bash "${{ github.action_path }}/resolve-timeouts.sh"

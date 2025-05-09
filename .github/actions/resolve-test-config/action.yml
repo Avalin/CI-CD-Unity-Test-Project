@@ -1,48 +1,77 @@
 name: Resolve Test Config
-description: Resolves Unity test config values from overrides or defaults.json
+description: Resolves Unity test config values from input, repo vars, project defaults, or fallback.
 
 inputs:
-  useGitLfsOverride:
-    description: Override for Git LFS usage
+  useGitLfsInput:
+    description: Direct input override for Git LFS usage
     required: false
-  editModePathOverride:
-    description: Override for EditMode test path
+  useGitLfsRepoVar:
+    description: Repository variable fallback for Git LFS
     required: false
-  playModePathOverride:
-    description: Override for PlayMode test path
+
+  editModePathInput:
+    description: Direct input override for EditMode test path
     required: false
-  quietModeOverride:
-    description: Override for Quiet Mode
+  editModePathRepoVar:
+    description: Repository variable fallback for EditMode path
     required: false
-  defaultsFileOverride:
-    description: 'Optional path (in your workspace) to a custom defaults.json'
+
+  playModePathInput:
+    description: Direct input override for PlayMode test path
     required: false
+  playModePathRepoVar:
+    description: Repository variable fallback for PlayMode path
+    required: false
+
+  quietModeInput:
+    description: Direct input override for Quiet Mode
+    required: false
+  quietModeRepoVar:
+    description: Repository variable fallback for Quiet Mode
+    required: false
+
+  projectDefaultsFile:
+    description: Optional path to project-level defaults.json
+    required: false
+    default: .github/config/defaults.json
 
 outputs:
   useGitLfs:
-    description: Resolved Git LFS usage
-    value: ${{ steps.set.outputs.useGitLfs }}
+    description: Final resolved Git LFS usage
+    value: ${{ steps.resolve.outputs.useGitLfs }}
   editModePath:
-    description: Resolved EditMode path
-    value: ${{ steps.set.outputs.editModePath }}
+    description: Final resolved EditMode test path
+    value: ${{ steps.resolve.outputs.editModePath }}
   playModePath:
-    description: Resolved PlayMode path
-    value: ${{ steps.set.outputs.playModePath }}
+    description: Final resolved PlayMode test path
+    value: ${{ steps.resolve.outputs.playModePath }}
   quietMode:
-    description: Resolved Quiet Mode
-    value: ${{ steps.set.outputs.quietMode }}
+    description: Final resolved Quiet Mode value
+    value: ${{ steps.resolve.outputs.quietMode }}
 
 runs:
-  using: "composite"
+  using: composite
   steps:
-    - id: set
+    - name: Make script executable
+      shell: bash
+      run: chmod +x "${{ github.action_path }}/resolve-test-config.sh"
+
+    - id: resolve
+      name: Resolve test configuration
       shell: bash
       env:
-        DEFAULTS_FILE_OVERRIDE: ${{ inputs.defaultsFileOverride }}
-        USE_GIT_LFS_OVERRIDE: ${{ inputs.useGitLfsOverride }}
-        EDIT_MODE_PATH_OVERRIDE: ${{ inputs.editModePathOverride }}
-        PLAY_MODE_PATH_OVERRIDE: ${{ inputs.playModePathOverride }}
-        QUIET_MODE_OVERRIDE: ${{ inputs.quietModeOverride }}
-      run: |
-        chmod +x "${{ github.action_path }}/resolve-test-config.sh"
-        bash "${{ github.action_path }}/resolve-test-config.sh"
+        USE_GIT_LFS_INPUT:       ${{ inputs.useGitLfsInput }}
+        USE_GIT_LFS_REPO_VAR:    ${{ inputs.useGitLfsRepoVar }}
+
+        EDIT_MODE_PATH_INPUT:    ${{ inputs.editModePathInput }}
+        EDIT_MODE_PATH_REPO_VAR: ${{ inputs.editModePathRepoVar }}
+
+        PLAY_MODE_PATH_INPUT:    ${{ inputs.playModePathInput }}
+        PLAY_MODE_PATH_REPO_VAR: ${{ inputs.playModePathRepoVar }}
+
+        QUIET_MODE_INPUT:        ${{ inputs.quietModeInput }}
+        QUIET_MODE_REPO_VAR:     ${{ inputs.quietModeRepoVar }}
+
+        PROJECT_DEFAULTS_FILE:   ${{ inputs.projectDefaultsFile }}
+        ACTION_DEFAULTS_FILE:    ${{ github.action_path }}/defaults.json
+      run: bash "${{ github.action_path }}/resolve-test-config.sh"

@@ -1,9 +1,11 @@
 {
     "unity": {
       "useGitLfs": false,
-      "editModePath": "Assets/Tests/Editor",
-      "playModePath": "Assets/Tests/PlayMode",
       "quietMode": false
+    },
+    "unityTests": {
+      "editModePath": "Assets/Tests/Editor",
+      "playModePath": "Assets/Tests/PlayMode"
     }
 }
   

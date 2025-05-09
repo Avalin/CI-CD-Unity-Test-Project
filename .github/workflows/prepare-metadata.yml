@@ -36,230 +36,142 @@ on:
         required: false
     outputs:
       projectName:
-        value: ${{ jobs.resolve_project_name.outputs.sanitized_name }}
+        value: ${{ jobs.prepare_metadata.outputs.projectName }}
       unityVersion:
-        value: ${{ jobs.resolve_unity_version.outputs.unityVersion }}
+        value: ${{ jobs.prepare_metadata.outputs.unityVersion }}
       buildVersion:
         value: ${{ jobs.resolve_build_version.outputs.buildVersion }}
-      useGitLfs:
-        value: ${{ jobs.prepare_test_data.outputs.useGitLfs }}
-      editModePath:
-        value: ${{ jobs.prepare_test_data.outputs.editModePath }}
-      playModePath:
-        value: ${{ jobs.prepare_test_data.outputs.playModePath }}
-      timeoutMinutesTests:
-        value: ${{ jobs.prepare_timeouts.outputs.timeoutMinutesTests }}
-      timeoutMinutesBuild:
-        value: ${{ jobs.prepare_timeouts.outputs.timeoutMinutesBuild }}
-      quietMode:
-        value: ${{ jobs.prepare_test_data.outputs.quietMode }}
-      buildType:
-        value: ${{ jobs.resolve_build_type.outputs.buildType }}
       testsOnly:
-        value: ${{ jobs.detect_tests_only.outputs.testsOnly }}
+        value: ${{ jobs.resolve_tests_status.outputs.testsOnly }}
       skipTests:
-        value: ${{ jobs.detect_skip_tests.outputs.skipTests }}
+        value: ${{ jobs.resolve_tests_status.outputs.skipTests }}
+      useGitLfs:
+        value: ${{ jobs.prepare_metadata.outputs.useGitLfs }}
+      editModePath:
+        value: ${{ jobs.prepare_metadata.outputs.editModePath }}
+      playModePath:
+        value: ${{ jobs.prepare_metadata.outputs.playModePath }}
+      timeoutMinutesTests:
+        value: ${{ jobs.prepare_metadata.outputs.timeoutMinutesTests }}
+      timeoutMinutesBuild:
+        value: ${{ jobs.prepare_metadata.outputs.timeoutMinutesBuild }}
+      quietMode:
+        value: ${{ jobs.prepare_metadata.outputs.quietMode }}
+      buildType:
+        value: ${{ jobs.prepare_metadata.outputs.buildType }}
       retentionDays:
-        value: ${{ jobs.resolve_retention_days.outputs.retentionDays }}
+        value: ${{ jobs.prepare_metadata.outputs.retentionDays }}
       buildTargets:
-        value: ${{ jobs.resolve_build_targets.outputs.validatedBuildTargets || '[]' }}
+        value: ${{ jobs.prepare_metadata.outputs.buildTargets }}
       validDeployTargets:
-        value: ${{ jobs.validate_deploy_targets.outputs.validDeployTargets || '[]' }}
+        value: ${{ jobs.prepare_metadata.outputs.deployTargets || '[]' }}
       requiresCombined:
-        value: ${{ jobs.analyze_artifact_strategy.outputs.requiresCombined || false }}
+        value: ${{ jobs.prepare_metadata.outputs.requiresCombined || false }}
       skipPerBuildTarget:
-        value: ${{ jobs.analyze_artifact_strategy.outputs.skipPerBuildTarget || false }}
+        value: ${{ jobs.prepare_metadata.outputs.skipPerBuildTarget || false }}
 
 jobs:
-  detect_tests_only:
-    name: Detect Tests-Only Run
+  prepare_metadata:
+    name: ⚖️ Prepare Metadata
     runs-on: ubuntu-latest
     outputs:
-      testsOnly: ${{ steps.detect.outputs.testsOnly }}
+      projectName: ${{ steps.metadata.outputs.projectName }}
+      unityVersion: ${{ steps.metadata.outputs.unityVersion }}
+      timeoutMinutesTests: ${{ steps.metadata.outputs.timeoutMinutesTests }}
+      timeoutMinutesBuild: ${{ steps.metadata.outputs.timeoutMinutesBuild }}
+      retentionDays: ${{ steps.metadata.outputs.retentionDays }}
+      buildType: ${{ steps.metadata.outputs.buildType }}
+      buildTargets: ${{ steps.metadata.outputs.buildTargets }}
+      deployTargets: ${{ steps.metadata.outputs.deployTargets }}
+      requiresCombined: ${{ steps.metadata.outputs.requiresCombinedArtifact }}
+      skipPerBuildTarget: ${{ steps.metadata.outputs.skipPerBuildTargetArtifact }}
+      useGitLfs: ${{ steps.metadata.outputs.useGitLfs }}
+      editModePath: ${{ steps.metadata.outputs.editModePath }}
+      playModePath: ${{ steps.metadata.outputs.playModePath }}
+      quietMode: ${{ steps.metadata.outputs.quietMode }}
     steps:
-      - id: detect
-        run: |
-          IS_TESTS_ONLY="false"
-
-          # Manual flag (from dispatch input)
-          if [[ "${{ inputs.testsOnly }}" == "true" ]]; then
-            IS_TESTS_ONLY="true"
-          fi
-
-          # Auto-detect based on event
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            TYPE="${{ github.event.action }}"
-            if [[ "$TYPE" == "ready_for_review" || "$TYPE" == "synchronize" || "$TYPE" == "reopened" ]]; then
-              IS_TESTS_ONLY="true"
-            fi
-          fi
-
-          echo "testsOnly=$IS_TESTS_ONLY" >> "$GITHUB_OUTPUT"
-
-  detect_skip_tests:
-    name: Detect Skip Tests
-    needs: detect_tests_only
-    runs-on: ubuntu-latest
-    env:
-      TESTS_ONLY: ${{ needs.detect_tests_only.outputs.testsOnly }}
-    outputs:
-      skipTests: ${{ steps.detect.outputs.skipTests }}
-    steps:
-      - id: detect
-        run: |
-          INPUT_SKIP_TESTS="${{ inputs.skipTests || 'default' }}"
-          SKIP_TESTS=false
-
-          # Prioritize explicit 'true' or 'false' input
-          if [[ "$INPUT_SKIP_TESTS" == "true" || "$INPUT_SKIP_TESTS" == "false" ]]; then
-            SKIP_TESTS="$INPUT_SKIP_TESTS"
-            echo "✅ Explicit input provided - skipping tests: $SKIP_TESTS"
-          else
-            # Auto-detect logic when input is 'default' or anything else
-            if [ "$TESTS_ONLY" = "true" ]; then
-              SKIP_TESTS="false"
-              echo "ℹ️ Tests-only mode detected, forcing skipTests=false"
-            elif [[ "${{ vars.EXCLUDE_UNITY_TESTS }}" == "true" ]]; then
-              SKIP_TESTS=true
-              echo "ℹ️ vars.EXCLUDE_UNITY_TESTS is true, setting skipTests=true"
-            fi
-
-            # Check commit message if this is a push event
-            if [[ "$GITHUB_EVENT_NAME" == "push" && -f "$GITHUB_EVENT_PATH" ]]; then
-              COMMIT_MSG=$(jq -r .head_commit.message < "$GITHUB_EVENT_PATH")
-              if [[ "$COMMIT_MSG" == *"[skip tests]"* ]]; then
-                SKIP_TESTS=true
-                echo "ℹ️ Commit message contains [skip tests], setting skipTests=true"
-              fi
-            fi
-          fi
-
-          echo "skipTests=$SKIP_TESTS" >> "$GITHUB_OUTPUT"
-
-  resolve_project_name:
-    runs-on: ubuntu-latest
-    name: Resolve Project Name
-    outputs:
-      sanitized_name: ${{ steps.resolve_project_name.outputs.sanitized_name }}
-    steps:
-      - name: Use Resolve Project Name Action
-        id: resolve_project_name
-        uses: avalin/unity-ci-templates/.github/actions/resolve-project-name@v1
-        with:
-          projectName: ${{ inputs.projectName }}
-
-  resolve_unity_version:
-    runs-on: ubuntu-latest
-    name: Resolve Unity Version
-    outputs:
-      unityVersion: ${{ steps.resolve_unity_version.outputs.unityVersion }}
-    steps:
-      - name: 📁 Checkout actions folder
+      - name: 📁 Checkout .github only
         uses: actions/checkout@v4
         with:
-          sparse-checkout: .github/actions
+          sparse-checkout: .github/*
           sparse-checkout-cone-mode: false
           fetch-depth: 1
 
-      - name: Use Resolve Unity Version Action
-        id: resolve_unity_version
-        uses: avalin/unity-ci-templates/.github/actions/resolve-unity-version@v1
+      - name: ⏳ Prepare Metadata
+        id: metadata
+        uses: avalin/unity-ci-templates/.github/actions/prepare-metadata@main
         with:
-          unityVersionOverride: ${{ inputs.unityVersion || vars.UNITY_VERSION }}
+          artifactSource: build
+          projectNameInput: ${{ inputs.projectName }}
+          projectNameRepoVar: ${{ vars.PROJECT_NAME }}
+          unityVersionInput: ${{ inputs.unityVersion }}
+          unityVersionRepoVar: ${{ vars.UNITY_VERSION }}
+          buildTypeInput: ${{ inputs.buildType }}
+          buildTargetsInput: ${{ inputs.buildTargets }}
+          buildTargetsRepoVar: ${{ vars.BUILD_TARGETS }}
+          deployTargetsInput: ${{ inputs.deployTargets }}
+          deployTargetsRepoVar: ${{ vars.DEPLOY_TARGETS }}
+          retentionDaysReleaseRepoVar: ${{ vars.RETENTION_DAYS_RELEASE }}
+          retentionDaysRcRepoVar: ${{ vars.RETENTION_DAYS_RC }}
+          retentionDaysPreviewRepoVar: ${{ vars.RETENTION_DAYS_PREVIEW }}
+          timeoutTestsRepoVar: ${{ vars.TIMEOUT_MINUTES_TESTS }}
+          timeoutBuildRepoVar: ${{ vars.TIMEOUT_MINUTES_BUILD }}
+          useGitLfsRepoVar: ${{ vars.USE_GIT_LFS }}
+          editModePathRepoVar: ${{ vars.UNITY_TESTS_EDITMODE_PATH }}
+          playModePathRepoVar: ${{ vars.UNITY_TESTS_PLAYMODE_PATH }}
+          quietModeRepoVar: ${{ vars.UNITY_TESTS_QUIET_MODE }}
 
-  prepare_test_data:
-    name: Prepare Test Data
-    runs-on: ubuntu-latest
-    needs:
-      - detect_skip_tests
-    if: ${{ needs.detect_skip_tests.outputs.skipTests != 'true' }}
-    outputs:
-      useGitLfs: ${{ steps.set.outputs.useGitLfs }}
-      editModePath: ${{ steps.set.outputs.editModePath }}
-      playModePath: ${{ steps.set.outputs.playModePath }}
-      quietMode: ${{ steps.set.outputs.quietMode }}
-    env:
-      USE_GIT_LFS_OVERRIDE: ${{ vars.USE_GIT_LFS }}
-      EDIT_MODE_PATH_OVERRIDE: ${{ vars.UNITY_TESTS_EDITMODE_PATH }}
-      PLAY_MODE_PATH_OVERRIDE: ${{ vars.UNITY_TESTS_PLAYMODE_PATH }}
-      QUIET_MODE_OVERRIDE: ${{ vars.UNITY_TESTS_QUIET_MODE }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Use Resolve Test Config Action
-        id: set
-        uses: avalin/unity-ci-templates/.github/actions/resolve-test-config@v1
-        with:
-          defaultsFileOverride: "./.github/config/defaults.json"
-          useGitLfsOverride: ${{ vars.USE_GIT_LFS }}
-          editModePathOverride: ${{ vars.UNITY_TESTS_EDITMODE_PATH }}
-          playModePathOverride: ${{ vars.UNITY_TESTS_PLAYMODE_PATH }}
-          quietModeOverride: ${{ vars.UNITY_TESTS_QUIET_MODE }}
-
-  prepare_timeouts:
-    name: Prepare Timeouts
+  resolve_tests_status:
+    name: Resolve Tests Status
     runs-on: ubuntu-latest
     outputs:
-      timeoutMinutesTests: ${{ steps.set.outputs.timeoutMinutesTests }}
-      timeoutMinutesBuild: ${{ steps.set.outputs.timeoutMinutesBuild }}
-    env:
-      TIMEOUT_TESTS_OVERRIDE: ${{ vars.TIMEOUT_TESTS_IN_MINUTES }}
-      TIMEOUT_BUILD_OVERRIDE: ${{ vars.TIMEOUT_BUILD_IN_MINUTES }}
+      testsOnly: ${{ steps.tests_only.outputs.testsOnly }}
+      skipTests: ${{ steps.skip_tests.outputs.skipTests }}
     steps:
-      - name: Checkout repository
+      - name: 📁 Checkout .github only
         uses: actions/checkout@v4
-
-      - name: Use Resolve Timeouts Action
-        id: set      
-        uses: avalin/unity-ci-templates/.github/actions/resolve-timeouts@v1
         with:
-          defaultsFileOverride: "./.github/config/defaults.json"
-          timeoutTestsOverride: ${{ vars.TIMEOUT_TESTS_IN_MINUTES }}
-          timeoutBuildOverride: ${{ vars.TIMEOUT_BUILD_IN_MINUTES }}
+          sparse-checkout: .github/*
+          sparse-checkout-cone-mode: false
+          fetch-depth: 1
 
-  resolve_build_type:
-    name: Resolve Build Type (Preview, RC, Release)
-    needs: detect_tests_only
-    runs-on: ubuntu-latest
-    env:
-      TESTS_ONLY: ${{ needs.detect_tests_only.outputs.testsOnly }}
-    outputs:
-      buildType: ${{ steps.set.outputs.buildType }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Use Resolve Build Type Action
-        id: set
-        uses: avalin/unity-ci-templates/.github/actions/resolve-build-type@v1
+      - name: 🔍 Resolve Tests-Only Mode
+        id: tests_only
+        uses: avalin/unity-ci-templates/.github/actions/detect-tests-only@main
         with:
-          testsOnlyOverride: ${{ needs.detect_tests_only.outputs.testsOnly }}
-          buildTypeOverride: ${{ inputs.buildType }}
+          testsOnlyInput: ${{ inputs.testsOnly }}
+
+      - name: 🔍 Resolve Skip Tests Flag
+        id: skip_tests
+        uses: avalin/unity-ci-templates/.github/actions/detect-skip-tests@main
+        with:
+          skipTestsInput: ${{ inputs.skipTests }}
+          skipTestsRepoVar: ${{ vars.EXCLUDE_UNITY_TESTS }}
+          testsOnly: ${{ steps.tests_only.outputs.testsOnly }}
 
   resolve_build_version:
     name: Create build versioning
     needs:
-      - resolve_build_type
-      - detect_tests_only
-    if: needs.detect_tests_only.outputs.testsOnly == 'false' && inputs.skipBuild == 'false'
+      - prepare_metadata
+      - resolve_tests_status
+    if: needs.resolve_tests_status.outputs.testsOnly == 'false' && inputs.skipBuild == 'false'
     uses: ./.github/workflows/build-version-resolver.yml
     with:
-      buildType: ${{ needs.resolve_build_type.outputs.buildType }}
+      buildType: ${{ needs.prepare_metadata.outputs.buildType }}
       buildVersion: ${{ inputs.buildVersion }}
 
   check_release_blocker:
     name: Check for Existing Release Blocker
     needs: 
       - resolve_build_version
-      - resolve_build_type
+      - prepare_metadata
     runs-on: ubuntu-latest
     outputs:
       release_already_exists: ${{ steps.set.outputs.should_continue }}
     steps:
       - id: set
         run: |
-          if [[ "${{ needs.resolve_build_type.outputs.buildType }}" == "preview" ]]; then
+          if [[ "${{ needs.prepare_metadata.outputs.buildType }}" == "preview" ]]; then
             echo "✅ Preview builds ignore releases - continuing pipeline."
             echo "release_already_exists=false" >> "$GITHUB_OUTPUT"
           elif [[ "${{ needs.resolve_build_version.outputs.releaseExists }}" == "true" ]]; then
@@ -271,95 +183,27 @@ jobs:
             echo "release_already_exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-  resolve_build_targets:
-    needs:
-      - detect_tests_only
-      - resolve_build_type
-    if: ${{ needs.detect_tests_only.outputs.testsOnly == 'false' && inputs.skipBuild == 'false' }}
-    uses: ./.github/workflows/resolve-build-targets.yml
-    with:
-      buildTargets: ${{ inputs.buildTargets || vars.BUILD_TARGETS || '[]' }}
-      buildType: ${{ needs.resolve_build_type.outputs.buildType }}
-
-  resolve_retention_days:
-    name: Resolve Retention Days
-    needs:
-      - detect_tests_only
-      - resolve_build_type
-    if: ${{ needs.detect_tests_only.outputs.testsOnly == 'false' && inputs.skipBuild == 'false' }}
-    runs-on: ubuntu-latest
-    outputs:
-      retentionDays: ${{ steps.set.outputs.retentionDays }}
-    env:
-      RETENTION_DAYS_RELEASE_OVERRIDE: ${{ vars.RETENTION_DAYS_RELEASE }}
-      RETENTION_DAYS_RC_OVERRIDE: ${{ vars.RETENTION_DAYS_RC }}
-      RETENTION_DAYS_PREVIEW_OVERRIDE: ${{ vars.RETENTION_DAYS_PREVIEW }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Use Resolve Retention Days Action
-        id: set
-        uses: avalin/unity-ci-templates/.github/actions/resolve-retention-days@v1
-        with:
-          defaultsFileOverride: "./.github/config/defaults.json"
-          buildType: ${{ needs.resolve_build_type.outputs.buildType }}
-
-  validate_deploy_targets:
-    name: Validate Deploy Targets
-    needs: 
-      - check_release_blocker
-      - resolve_build_type
-      - resolve_build_targets
-      - detect_tests_only
-    if: ${{ needs.detect_tests_only.outputs.testsOnly == 'false' }}
-    uses: ./.github/workflows/validate-deploy-targets.yml
-    with:
-      buildType: ${{ needs.resolve_build_type.outputs.buildType }}
-      buildTargets: ${{ needs.resolve_build_targets.outputs.validatedBuildTargets }}
-      deployTargets: ${{ inputs.deployTargets || vars.DEPLOY_TARGETS || '[]'}}
-
-  analyze_artifact_strategy:
-    name: Analyze Artifact Strategy
-    needs: 
-      - check_release_blocker
-      - validate_deploy_targets
-      - resolve_build_version
-    if: ${{ needs.validate_deploy_targets.outputs.skipAnalysis != 'true' }}
-    uses: ./.github/workflows/analyze-artifact-strategy.yml
-    with:
-      artifactSource: build
-      deployTargets: ${{ needs.validate_deploy_targets.outputs.validDeployTargets }}
-
   summarize_metadata:
     name: 📄 Summarize Metadata
     needs:
-      - detect_skip_tests
-      - detect_tests_only
-      - resolve_unity_version
-      - resolve_project_name
-      - resolve_build_type
-      - resolve_retention_days
-      - prepare_timeouts
-      - resolve_build_targets
+      - prepare_metadata
+      - resolve_tests_status
       - resolve_build_version
       - check_release_blocker
-      - validate_deploy_targets
-      - analyze_artifact_strategy
     if: always()
     uses: ./.github/workflows/summarize-metadata.yml
     with:
-      unityVersion: ${{ needs.resolve_unity_version.outputs.unityVersion }}
-      projectName: ${{ needs.resolve_project_name.outputs.sanitized_name }}
+      unityVersion: ${{ needs.prepare_metadata.outputs.unityVersion }}
+      projectName: ${{ needs.prepare_metadata.outputs.projectName }}
       buildVersion: ${{ needs.resolve_build_version.outputs.buildVersion }}
-      buildType: ${{ needs.resolve_build_type.outputs.buildType }}
-      skipTests: ${{ needs.detect_skip_tests.outputs.skipTests }}
-      testsOnly: ${{ needs.detect_tests_only.outputs.testsOnly }}
-      retentionDays: ${{ needs.resolve_retention_days.outputs.retentionDays }}
-      timeoutMinutesTests: ${{ needs.prepare_timeouts.outputs.timeoutMinutesTests }}
-      timeoutMinutesBuild: ${{ needs.prepare_timeouts.outputs.timeoutMinutesBuild }}
-      buildTargets: ${{ needs.resolve_build_targets.outputs.validatedBuildTargets || '[]' }}
-      validDeployTargets: ${{ needs.validate_deploy_targets.outputs.validDeployTargets || '[]' }}
-      requiresCombined: ${{ needs.analyze_artifact_strategy.outputs.requiresCombined || false }}
-      skipPerBuildTarget: ${{ needs.analyze_artifact_strategy.outputs.skipPerBuildTarget || false }}
+      buildType: ${{ needs.prepare_metadata.outputs.buildType }}
+      skipTests: ${{ needs.resolve_tests_status.outputs.skipTests }}
+      testsOnly: ${{ needs.resolve_tests_status.outputs.testsOnly }}
+      retentionDays: ${{ needs.prepare_metadata.outputs.retentionDays }}
+      timeoutMinutesTests: ${{ needs.prepare_metadata.outputs.timeoutMinutesTests }}
+      timeoutMinutesBuild: ${{ needs.prepare_metadata.outputs.timeoutMinutesBuild }}
+      buildTargets: ${{ needs.prepare_metadata.outputs.buildTargets }}
+      validDeployTargets: ${{ needs.prepare_metadata.outputs.deployTargets || '[]' }}
+      requiresCombined: ${{ needs.prepare_metadata.outputs.requiresCombined || false }}
+      skipPerBuildTarget: ${{ needs.prepare_metadata.outputs.skipPerBuildTarget || false }}
       releaseAlreadyExists: ${{ needs.check_release_blocker.outputs.release_already_exists }}

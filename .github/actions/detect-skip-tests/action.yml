@@ -1,0 +1,55 @@
+name: Detect Skip Tests
+description: Detects if Unity tests should be skipped.
+
+inputs:
+  skipTestsInput:
+    description: Explicit input override for skipTests (true/false)
+    required: false
+  skipTestsRepoVar:
+    description: Explicit input override for skipTests (true/false)
+    required: false
+  testsOnly:
+    description: Value from previous 'testsOnly' resolution
+    required: false
+
+outputs:
+  skipTests:
+    description: Final skipTests decision (true/false)
+    value: ${{ steps.detect.outputs.skipTests }}
+
+runs:
+  using: composite
+  steps:
+    - id: detect
+      shell: bash
+      env:
+        SKIP_TESTS_INPUT: ${{ inputs.skipTestsInput }}
+        TESTS_ONLY: ${{ inputs.testsOnly }}
+        EXCLUDE_UNITY_TESTS_VAR: ${{ inputs.skipTestsRepoVar }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GITHUB_EVENT_PATH: ${{ github.event_path }}
+      run: |
+        SKIP_TESTS=false
+
+        if [[ "$SKIP_TESTS_INPUT" == "true" || "$SKIP_TESTS_INPUT" == "false" ]]; then
+          SKIP_TESTS="$SKIP_TESTS_INPUT"
+          echo "✅ Explicit input provided - skipping tests: $SKIP_TESTS"
+        else
+          if [[ "$TESTS_ONLY" == "true" ]]; then
+            SKIP_TESTS="false"
+            echo "ℹ️ Tests-only mode detected, forcing skipTests=false"
+          elif [[ "$EXCLUDE_UNITY_TESTS_VAR" == "true" ]]; then
+            SKIP_TESTS=true
+            echo "ℹ️ EXCLUDE_UNITY_TESTS is true, setting skipTests=true"
+          fi
+
+          if [[ "$GITHUB_EVENT_NAME" == "push" && -f "$GITHUB_EVENT_PATH" ]]; then
+            COMMIT_MSG=$(jq -r .head_commit.message < "$GITHUB_EVENT_PATH")
+            if [[ "$COMMIT_MSG" == *"[skip tests]"* ]]; then
+              SKIP_TESTS=true
+              echo "ℹ️ Commit message contains [skip tests], setting skipTests=true"
+            fi
+          fi
+        fi
+
+        echo "skipTests=$SKIP_TESTS" >> "$GITHUB_OUTPUT"
