@@ -19,10 +19,11 @@ fi
 PROJECT_DEFAULTS=$( [[ -f "$PROJECT_DEFAULTS_FILE" ]] && cat "$PROJECT_DEFAULTS_FILE" || echo '{}' )
 ACTION_DEFAULTS=$(cat "$ACTION_DEFAULTS_FILE")
 
-PROJECT_TESTS_TIMEOUT=$(echo "$PROJECT_DEFAULTS" | jq -r '.timeouts.testsInMinutes // empty')
-PROJECT_BUILD_TIMEOUT=$(echo "$PROJECT_DEFAULTS" | jq -r '.timeouts.buildInMinutes // empty')
-ACTION_TESTS_TIMEOUT=$(echo "$ACTION_DEFAULTS" | jq -r '.timeouts.testsInMinutes // empty')
-ACTION_BUILD_TIMEOUT=$(echo "$ACTION_DEFAULTS" | jq -r '.timeouts.buildInMinutes // empty')
+# Updated selectors
+PROJECT_TESTS_TIMEOUT=$(echo "$PROJECT_DEFAULTS" | jq -r '.tests.timeoutMinutes // empty')
+PROJECT_BUILD_TIMEOUT=$(echo "$PROJECT_DEFAULTS" | jq -r '.build.timeoutMinutes // empty')
+ACTION_TESTS_TIMEOUT=$(echo "$ACTION_DEFAULTS" | jq -r '.tests.timeoutMinutes // empty')
+ACTION_BUILD_TIMEOUT=$(echo "$ACTION_DEFAULTS" | jq -r '.build.timeoutMinutes // empty')
 
 validate_timeout() {
   local val="$1"

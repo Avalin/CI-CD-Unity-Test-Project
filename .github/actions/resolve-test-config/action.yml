@@ -2,13 +2,6 @@ name: Resolve Test Config
 description: Resolves Unity test config values from input, repo vars, project defaults, or fallback.
 
 inputs:
-  useGitLfsInput:
-    description: Direct input override for Git LFS usage
-    required: false
-  useGitLfsRepoVar:
-    description: Repository variable fallback for Git LFS
-    required: false
-
   editModePathInput:
     description: Direct input override for EditMode test path
     required: false
@@ -23,31 +16,18 @@ inputs:
     description: Repository variable fallback for PlayMode path
     required: false
 
-  quietModeInput:
-    description: Direct input override for Quiet Mode
-    required: false
-  quietModeRepoVar:
-    description: Repository variable fallback for Quiet Mode
-    required: false
-
   projectDefaultsFile:
     description: Optional path to project-level defaults.json
     required: false
     default: .github/config/defaults.json
 
 outputs:
-  useGitLfs:
-    description: Final resolved Git LFS usage
-    value: ${{ steps.resolve.outputs.useGitLfs }}
   editModePath:
     description: Final resolved EditMode test path
     value: ${{ steps.resolve.outputs.editModePath }}
   playModePath:
     description: Final resolved PlayMode test path
     value: ${{ steps.resolve.outputs.playModePath }}
-  quietMode:
-    description: Final resolved Quiet Mode value
-    value: ${{ steps.resolve.outputs.quietMode }}
 
 runs:
   using: composite
@@ -60,17 +40,11 @@ runs:
       name: Resolve test configuration
       shell: bash
       env:
-        USE_GIT_LFS_INPUT:       ${{ inputs.useGitLfsInput }}
-        USE_GIT_LFS_REPO_VAR:    ${{ inputs.useGitLfsRepoVar }}
-
         EDIT_MODE_PATH_INPUT:    ${{ inputs.editModePathInput }}
         EDIT_MODE_PATH_REPO_VAR: ${{ inputs.editModePathRepoVar }}
 
         PLAY_MODE_PATH_INPUT:    ${{ inputs.playModePathInput }}
         PLAY_MODE_PATH_REPO_VAR: ${{ inputs.playModePathRepoVar }}
-
-        QUIET_MODE_INPUT:        ${{ inputs.quietModeInput }}
-        QUIET_MODE_REPO_VAR:     ${{ inputs.quietModeRepoVar }}
 
         PROJECT_DEFAULTS_FILE:   ${{ inputs.projectDefaultsFile }}
         ACTION_DEFAULTS_FILE:    ${{ github.action_path }}/defaults.json

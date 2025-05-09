@@ -1,0 +1,79 @@
+name: 📄 Summarize Metadata
+
+description: |
+  Writes a summary of resolved build metadata to the GitHub job summary.
+
+inputs:
+  useGitLfs: { required: true, type: string }
+  quietMode: { required: true, type: string }
+  excludeUnityTests: { required: true, type: string }
+  forceCombineArtifacts: { required: true, type: string }
+  projectName: { required: true, type: string }
+  playModePath: { required: true, type: string }
+  editModePath: { required: true, type: string }
+  unityVersion: { required: true, type: string }
+  buildVersion: { required: true, type: string }
+  buildType: { required: true, type: string }
+  skipTests: { required: true, type: string }
+  testsOnly: { required: true, type: string }
+  retentionDays: { required: true, type: string }
+  timeoutMinutesTests: { required: true, type: string }
+  timeoutMinutesBuild: { required: true, type: string }
+  buildTargets: { required: true, type: string }
+  validDeployTargets: { required: true, type: string }
+  requiresCombined: { required: true, type: string }
+  skipPerBuildTarget: { required: true, type: string }
+
+runs:
+  using: composite
+  steps:
+    - name: Write Metadata Summary
+      shell: bash
+      run: |
+        BUILD_TARGETS=$(echo '${{ inputs.buildTargets }}' | jq -c '.')
+        DEPLOY_TARGETS=$(echo '${{ inputs.validDeployTargets }}' | jq -c '.')
+
+        if [[ -z "$DEPLOY_TARGETS" || "$DEPLOY_TARGETS" == 'null' ]]; then
+          DEPLOY_TARGETS='[]'
+        fi
+
+        if [[ -z "$BUILD_TARGETS" || "$BUILD_TARGETS" == 'null' ]]; then
+          BUILD_TARGETS='[]'
+        fi
+
+        echo "# ⏳ Final Metadata Summary" >> $GITHUB_STEP_SUMMARY
+
+        echo "## ⚙️ CI Options Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Option                  | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------------------------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Use Git LFS             | ${{ inputs.useGitLfs }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Quiet Mode              | ${{ inputs.quietMode }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Skip Unity Tests        | ${{ inputs.excludeUnityTests }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Force Combine Artifacts | ${{ inputs.forceCombineArtifacts }} |" >> $GITHUB_STEP_SUMMARY
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "## 📋 Test Config Summary" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Key             | Value                      |" >> "$GITHUB_STEP_SUMMARY"
+        echo "|-----------------|----------------------------|" >> "$GITHUB_STEP_SUMMARY"
+        echo "| EditMode Path   | ${{ inputs.editModePath }} |" >> "$GITHUB_STEP_SUMMARY"
+        echo "| PlayMode Path   | ${{ inputs.playModePath }} |" >> "$GITHUB_STEP_SUMMARY"
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "## 📋 Build & Deploy Metadata" >> $GITHUB_STEP_SUMMARY
+        echo "| Key                          | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|------------------------------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Unity Version                | ${{ inputs.unityVersion }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Project Name                 | ${{ inputs.projectName }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Skip Tests                   | ${{ inputs.skipTests }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Tests Only                   | ${{ inputs.testsOnly }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Tests Timeout (minutes)      | ${{ inputs.timeoutMinutesTests }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Build Timeout (minutes)      | ${{ inputs.timeoutMinutesBuild }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Build Version                | ${{ inputs.buildVersion }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Build Type                   | ${{ inputs.buildType }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Build Targets                | \`$BUILD_TARGETS\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Deploy Targets               | \`$DEPLOY_TARGETS\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Retention Days               | ${{ inputs.retentionDays }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Requires Combined Artifacts  | ${{ inputs.requiresCombined }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Skip Per-Build-Target Artifacts | ${{ inputs.skipPerBuildTarget }} |" >> $GITHUB_STEP_SUMMARY

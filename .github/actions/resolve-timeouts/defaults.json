@@ -1,7 +1,8 @@
 {
-    "timeouts": {
-      "testsInMinutes": 15,
-      "buildInMinutes": 30
-    }
+  "tests": {
+    "timeoutMinutes": 15
+  },
+  "build": {
+    "timeoutMinutes": 30
+  }
 }
-  

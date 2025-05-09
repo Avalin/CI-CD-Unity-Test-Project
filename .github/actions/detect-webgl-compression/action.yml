@@ -1,0 +1,55 @@
+name: 🔎 Detect WebGL Compression Format
+description: Detects if a Unity WebGL build contains .br or .gz compressed files and sets 'needs_patch' output.
+
+inputs:
+  artifactDir:
+    description: Path to the artifact directory containing WebGL build (e.g., deployment-artifacts/MyProject-v1.2.3/WebGL)
+    required: true
+
+outputs:
+  needs_patch:
+    description: Whether the WebGL build has compressed files requiring patching (true/false)
+    value: ${{ steps.detect.outputs.needs_patch }}
+
+runs:
+  using: composite
+  steps:
+    - id: detect
+      name: Detect .br / .gz Compression
+      shell: bash
+      run: |
+        ARTIFACT_DIR="${{ inputs.artifactDir }}/WebGL"
+        echo "🔍 Checking for compression in WebGL build: $ARTIFACT_DIR"
+
+        if [ ! -d "$ARTIFACT_DIR" ]; then
+          echo "❌ WebGL directory not found at $ARTIFACT_DIR"
+          echo "needs_patch=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        has_br=0
+        has_gz=0
+
+        if find "$ARTIFACT_DIR" -type f -name "*.br" | grep -q .; then
+          has_br=1
+        fi
+
+        if find "$ARTIFACT_DIR" -type f -name "*.gz" | grep -q .; then
+          has_gz=1
+        fi
+
+        if [ "$has_br" -eq 1 ]; then
+          echo "⚠️ Detected Brotli (.br) compressed files."
+        fi
+
+        if [ "$has_gz" -eq 1 ]; then
+          echo "⚠️ Detected Gzip (.gz) compressed files."
+        fi
+
+        if [ "$has_br" -eq 1 ] || [ "$has_gz" -eq 1 ]; then
+          echo "needs_patch=true" >> "$GITHUB_OUTPUT"
+          echo "✅ Compression detected; patching required."
+        else
+          echo "needs_patch=false" >> "$GITHUB_OUTPUT"
+          echo "✅ No compressed files detected; no patching needed."
+        fi

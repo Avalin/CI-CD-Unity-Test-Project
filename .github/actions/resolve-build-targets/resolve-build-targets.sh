@@ -22,8 +22,8 @@ fi
 PROJECT_DEFAULTS=$( [[ -f "$PROJECT_DEFAULTS_FILE" ]] && cat "$PROJECT_DEFAULTS_FILE" || echo '{}' )
 ACTION_DEFAULTS=$(cat "$ACTION_DEFAULTS_FILE")
 
-PROJECT_DEFAULT_TARGETS=$(echo "$PROJECT_DEFAULTS" | jq -c '.targets.defaultBuildTargets // empty')
-ACTION_DEFAULT_TARGETS=$(echo "$ACTION_DEFAULTS" | jq -c '.targets.defaultBuildTargets // empty')
+PROJECT_DEFAULT_TARGETS=$(echo "$PROJECT_DEFAULTS" | jq -c '.build.defaultTargets // empty')
+ACTION_DEFAULT_TARGETS=$(echo "$ACTION_DEFAULTS" | jq -c '.build.defaultTargets // empty')
 
 # Step 1: Direct input
 if [[ -n "$BUILDTARGETS_INPUT" && "$BUILDTARGETS_INPUT" != "null" ]]; then

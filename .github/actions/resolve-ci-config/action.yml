@@ -1,0 +1,75 @@
+name: Resolve CI Config
+description: Resolves pipeline-wide CI flags (Git LFS, quiet-mode, exclude tests, combine artifacts) from inputs, repo vars, project defaults, or action fallbacks.
+
+inputs:
+  useGitLfsInput:
+    description: Override for using Git LFS (true/false)
+    required: false
+  useGitLfsRepoVar:
+    description: Repo-var fallback for useGitLfs
+    required: false
+
+  quietModeInput:
+    description: Override for quiet mode (true/false)
+    required: false
+  quietModeRepoVar:
+    description: Repo-var fallback for quietMode
+    required: false
+
+  excludeUnityTestsInput:
+    description: Override for excluding Unity tests (true/false)
+    required: false
+  excludeUnityTestsRepoVar:
+    description: Repo-var fallback for excludeUnityTests
+    required: false
+
+  forceCombineArtifactsInput:
+    description: Override for forcing artifact combination (true/false)
+    required: false
+  forceCombineArtifactsRepoVar:
+    description: Repo-var fallback for forceCombineArtifacts
+    required: false
+
+  projectDefaultsFile:
+    description: Path to project-level defaults.json
+    required: false
+    default: .github/config/defaults.json
+
+outputs:
+  useGitLfs:
+    description: Resolved useGitLfs flag
+    value: ${{ steps.resolve.outputs.useGitLfs }}
+  quietMode:
+    description: Resolved quietMode flag
+    value: ${{ steps.resolve.outputs.quietMode }}
+  excludeUnityTests:
+    description: Resolved excludeUnityTests flag
+    value: ${{ steps.resolve.outputs.excludeUnityTests }}
+  forceCombineArtifacts:
+    description: Resolved forceCombineArtifacts flag
+    value: ${{ steps.resolve.outputs.forceCombineArtifacts }}
+
+runs:
+  using: composite
+  steps:
+    - name: Make script executable
+      shell: bash
+      run: chmod +x "${{ github.action_path }}/resolve-ci-config.sh"
+
+    - id: resolve
+      name: Resolve CI flags
+      shell: bash
+      env:
+        USE_GIT_LFS_INPUT:                ${{ inputs.useGitLfsInput }}
+        USE_GIT_LFS_REPO_VAR:             ${{ inputs.useGitLfsRepoVar }}
+        QUIET_MODE_INPUT:                 ${{ inputs.quietModeInput }}
+        QUIET_MODE_REPO_VAR:              ${{ inputs.quietModeRepoVar }}
+        EXCLUDE_UNITY_TESTS_INPUT:        ${{ inputs.excludeUnityTestsInput }}
+        EXCLUDE_UNITY_TESTS_REPO_VAR:     ${{ inputs.excludeUnityTestsRepoVar }}
+        FORCE_COMBINE_ARTIFACTS_INPUT:    ${{ inputs.forceCombineArtifactsInput }}
+        FORCE_COMBINE_ARTIFACTS_REPO_VAR: ${{ inputs.forceCombineArtifactsRepoVar }}
+        PROJECT_DEFAULTS_FILE:            ${{ inputs.projectDefaultsFile }}
+        ACTION_DEFAULTS_FILE:             ${{ github.action_path }}/defaults.json
+      run: |
+        chmod +x "${{ github.action_path }}/resolve-ci-config.sh" 
+        bash "${{ github.action_path }}/resolve-ci-config.sh"

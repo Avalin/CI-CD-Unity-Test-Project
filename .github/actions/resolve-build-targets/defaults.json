@@ -1,9 +1,9 @@
 {
-  "targets": {
-    "defaultBuildTargets": [
+  "build": {
+    "defaultTargets": [
       "WebGL"
     ],
-    "availableBuildTargets": [
+    "availableTargets": [
       "Android",
       "WebGL",
       "StandaloneLinux64",

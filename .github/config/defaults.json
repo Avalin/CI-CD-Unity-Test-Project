@@ -1,33 +1,36 @@
 {
   "unity": {
-    "version": "auto",
-    "useGitLfs": false,
-    "quietMode": false
-  },
-  "unityTests": {
-    "editModePath": "Assets/Tests/Editor",
-    "playModePath": "Assets/Tests/PlayMode"
+    "version": "auto"
   },
   "project": {
     "name": "My_Project"
   },
-  "timeouts": {
-    "testsInMinutes": 15,
-    "buildInMinutes": 30
+  "pipeline": {
+    "useGitLfs": false,
+    "quietMode": false,
+    "excludeUnityTests": false,
+    "forceCombineArtifacts": false
   },
-  "retentionDays": {
-    "preview": 7,
-    "release_candidate": 14,
-    "release": 30
+  "tests": {
+    "editMode": {
+      "path": "Assets/Tests/Editor"
+    },
+    "playMode": {
+      "path": "Assets/Tests/PlayMode"
+    },
+    "timeoutMinutes": 15
   },
-  "targets": {
-    "defaultBuildTargets": [
+  "build": {
+    "timeoutMinutes": 30,
+    "retentionDays": {
+      "preview": 7,
+      "release_candidate": 14,
+      "release": 30
+    },
+    "defaultTargets": [
       "WebGL"
     ],
-    "defaultDeployTargets": [
-      "gh-pages"
-    ],
-    "availableBuildTargets": [
+    "availableTargets": [
       "Android",
       "WebGL",
       "StandaloneLinux64",
@@ -35,8 +38,13 @@
       "StandaloneWindows64",
       "StandaloneOSX",
       "iOS"
+    ]
+  },
+  "deploy": {
+    "defaultTargets": [
+      "gh-pages"
     ],
-    "availableDeployTargets": [
+    "availableTargets": [
       "itch.io",
       "appcenter",
       "firebase",
@@ -46,9 +54,5 @@
       "testflight",
       "custom-server"
     ]
-  },
-  "pipeline": {
-    "forceCombineArtifacts": false,
-    "excludeUnityTests": false
   }
 }

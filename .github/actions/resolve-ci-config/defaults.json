@@ -1,0 +1,8 @@
+{
+  "pipeline": {
+    "useGitLfs": false,
+    "forceCombineArtifacts": false,
+    "excludeUnityTests": false,
+    "quietMode": false
+  }
+}

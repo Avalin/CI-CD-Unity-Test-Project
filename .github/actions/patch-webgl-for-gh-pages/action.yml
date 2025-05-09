@@ -1,0 +1,56 @@
+name: 🩹 Patch & Decompress Unity WebGL for GitHub Pages
+description: Removes .br/.gz compressed files and disables compressionFormat references for GH Pages compatibility.
+
+inputs:
+  artifactDir:
+    description: Path to the artifact directory containing WebGL build (e.g., deployment-artifacts/MyProject-v1.2.3/WebGL)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install brotli and gzip tools
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y brotli gzip
+
+    - name: Patch and decompress WebGL build
+      shell: bash
+      run: |
+        ARTIFACT_DIR="${{ inputs.artifactDir }}/WebGL"
+        echo "🔧 Patching Unity WebGL files for GitHub Pages in $ARTIFACT_DIR"
+
+        if [ ! -d "$ARTIFACT_DIR" ]; then
+          echo "❌ WebGL directory not found at $ARTIFACT_DIR"
+          exit 1
+        fi
+
+        cd "$ARTIFACT_DIR"
+
+        # 1) Decompress .br → original
+        find . -type f -name "*.br" | while read f; do
+          out="${f%.br}"
+          echo "Decompressing Brotli: $f → $out"
+          brotli -d -f "$f" -o "$out"
+          rm "$f"
+        done
+
+        # 2) Decompress .gz → original
+        find . -type f -name "*.gz" | while read f; do
+          out="${f%.gz}"
+          echo "Decompressing Gzip: $f → $out"
+          gunzip -c "$f" > "$out"
+          rm "$f"
+        done
+
+        # 3) Strip out .br/.gz references and compressionFormat from .js, .json, .html
+        find . -type f \( -name "*.js" -o -name "*.json" -o -name "*.html" \) -print0 | xargs -0 sed -i \
+          -e 's/\.br//g' \
+          -e 's/\.gz//g' \
+          -e 's/compressionFormat:"br"/compressionFormat:null/g' \
+          -e 's/compressionFormat:"gzip"/compressionFormat:null/g' \
+          -e 's/"compressionFormat":"br"/"compressionFormat":null/g' \
+          -e 's/"compressionFormat":"gzip"/"compressionFormat":null/g'
+
+        echo "✅ All .br/.gz references removed; files are now uncompressed for GH Pages."

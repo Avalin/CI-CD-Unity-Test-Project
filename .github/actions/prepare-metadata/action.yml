@@ -4,6 +4,8 @@ description: Bundles all key resolvers into one unified action, reducing repeate
 inputs:
   artifactSource:
     required: true
+
+  # Project & Unity
   projectNameInput:
     required: true
   projectNameRepoVar:
@@ -12,17 +14,37 @@ inputs:
     required: false
   unityVersionRepoVar:
     required: false
+
+  # Pipeline-wide flags
+  useGitLfsInput:
+    required: false
+  useGitLfsRepoVar:
+    required: false
+  quietModeInput:
+    required: false
+  quietModeRepoVar:
+    required: false
+  excludeUnityTestsInput:
+    required: false
+  excludeUnityTestsRepoVar:
+    required: false
+  forceCombineArtifactsInput:
+    required: false
+  forceCombineArtifactsRepoVar:
+    required: false
+
+  # Test-specific
+  editModePathInput:
+    required: false
+  editModePathRepoVar:
+    required: false
+  playModePathInput:
+    required: false
+  playModePathRepoVar:
+    required: false
+
+  # Build & timeouts
   buildTypeInput:
-    required: false
-  buildTargetsInput:
-    required: false
-  buildTargetsRepoVar:
-    required: false
-  retentionDaysReleaseRepoVar:
-    required: false
-  retentionDaysRcRepoVar:
-    required: false
-  retentionDaysPreviewRepoVar:
     required: false
   timeoutTestsInput:
     required: false
@@ -32,25 +54,21 @@ inputs:
     required: false
   timeoutBuildRepoVar:
     required: false
+
+  # Retention & targets
+  retentionDaysReleaseRepoVar:
+    required: false
+  retentionDaysRcRepoVar:
+    required: false
+  retentionDaysPreviewRepoVar:
+    required: false
+  buildTargetsInput:
+    required: false
+  buildTargetsRepoVar:
+    required: false
   deployTargetsInput:
     required: false
   deployTargetsRepoVar:
-    required: false
-  useGitLfsInput:
-    required: false
-  useGitLfsRepoVar:
-    required: false
-  editModePathInput:
-    required: false
-  editModePathRepoVar:
-    required: false
-  playModePathInput:
-    required: false
-  playModePathRepoVar:
-    required: false
-  quietModeInput:
-    required: false
-  quietModeRepoVar:
     required: false
 
 outputs:
@@ -75,13 +93,17 @@ outputs:
   skipPerBuildTargetArtifact:
     value: ${{ steps.artifact_strategy.outputs.skipPerBuildTarget }}
   useGitLfs:
-    value: ${{ steps.test_config.outputs.useGitLfs }}
+    value: ${{ steps.ci_options.outputs.useGitLfs }}
   editModePath:
     value: ${{ steps.test_config.outputs.editModePath }}
   playModePath:
     value: ${{ steps.test_config.outputs.playModePath }}
   quietMode:
-    value: ${{ steps.test_config.outputs.quietMode }}
+    value: ${{ steps.ci_options.outputs.quietMode }}
+  forceCombineArtifacts:
+    value: ${{ steps.ci_options.outputs.forceCombineArtifacts }}
+  excludeUnityTests:
+    value: ${{ steps.ci_options.outputs.excludeUnityTests }}
 
 runs:
   using: composite
@@ -100,18 +122,27 @@ runs:
         unityVersionInput: ${{ inputs.unityVersionInput }}
         unityVersionRepoVar: ${{ inputs.unityVersionRepoVar }}
 
+    - name: ⚙️ Resolve CI Options
+      id: ci_options
+      uses: avalin/unity-ci-templates/.github/actions/resolve-ci-config@main
+      with:
+        useGitLfsInput: ${{ inputs.useGitLfsInput }}
+        useGitLfsRepoVar: ${{ inputs.useGitLfsRepoVar }}
+        quietModeInput: ${{ inputs.quietModeInput }}
+        quietModeRepoVar: ${{ inputs.quietModeRepoVar }}
+        excludeUnityTestsInput: ${{ inputs.excludeUnityTestsInput }}
+        excludeUnityTestsRepoVar: ${{ inputs.excludeUnityTestsRepoVar }}
+        forceCombineArtifactsInput: ${{ inputs.forceCombineArtifactsInput }}
+        forceCombineArtifactsRepoVar: ${{ inputs.forceCombineArtifactsRepoVar }}
+
     - name: 📦 Resolve Test Config
       id: test_config
       uses: avalin/unity-ci-templates/.github/actions/resolve-test-config@main
       with:
-        useGitLfsInput: ${{ inputs.useGitLfsInput }}
-        useGitLfsRepoVar: ${{ inputs.useGitLfsRepoVar }}
         editModePathInput: ${{ inputs.editModePathInput }}
         editModePathRepoVar: ${{ inputs.editModePathRepoVar }}
         playModePathInput: ${{ inputs.playModePathInput }}
         playModePathRepoVar: ${{ inputs.playModePathRepoVar }}
-        quietModeInput: ${{ inputs.quietModeInput }}
-        quietModeRepoVar: ${{ inputs.quietModeRepoVar }}
 
     - name: 📦 Resolve Build Type
       id: build_type
@@ -151,7 +182,7 @@ runs:
       with:
         buildType: ${{ steps.build_type.outputs.buildType }}
         buildTargets: ${{ steps.build_targets.outputs.buildTargets }}
-        deployTargets: ${{ inputs.deployTargetsInputs || inputs.deployTargetsRepoVar || '[]'}}
+        deployTargets: ${{ inputs.deployTargetsInput || inputs.deployTargetsRepoVar || '[]'}}
 
     - name: 📦 Analyze Artifact Strategy
       id: artifact_strategy

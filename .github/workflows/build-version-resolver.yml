@@ -15,9 +15,6 @@ on:
       buildVersion:
         description: "The resolved build version string"
         value: ${{ jobs.version_resolver.outputs.buildVersion }}
-      releaseExists:
-        description: "Whether a GitHub release already exists for this version"
-        value: ${{ jobs.version_resolver.outputs.releaseExists }}
 
 jobs:
   version_resolver:
@@ -25,21 +22,19 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       buildVersion: ${{ steps.get_version.outputs.version }}
-      releaseExists: ${{ steps.check_release.outputs.release_exists }}
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Fetch All Tags
-        run: git fetch --tags --force
+      - name: 📡 Setup Git (fetch tags + default branch)
+        run: |
+          git init
+          git remote add origin https://github.com/${{ github.repository }}
+          git fetch origin --tags --force
+          git fetch origin $(git remote show origin | grep 'HEAD branch' | awk '{print $NF}')
+          git checkout $(git remote show origin | grep 'HEAD branch' | awk '{print $NF}')
 
       - name: Resolve Build Version
         id: get_version
-        uses: avalin/unity-ci-templates/.github/actions/resolve-build-version@v1
+        uses: avalin/unity-ci-templates/.github/actions/resolve-build-version@main
         with:
           ref: "${GITHUB_REF}"
           event: "${GITHUB_EVENT_NAME}"
@@ -48,29 +43,39 @@ jobs:
 
       - name: 📝 Check if Release Version Already Exists
         id: check_release
-        uses: avalin/unity-ci-templates/.github/actions/check-release-exists@v1
+        uses: avalin/unity-ci-templates/.github/actions/check-release-exists@main
         with:
           version: ${{ steps.get_version.outputs.version }}
           repo: ${{ github.repository }}
           token: ${{ github.token }}
 
-      - name: 📄 Summarize Build Version Info
-        if: ${{ always() && inputs.buildType != 'preview' }}
+      - name: 📝 Log Build Version Info
+        if: ${{ always() }}
         run: |
-          echo "### 🔖 Version Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Build Type:** \`${{ inputs.buildType }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Trigger:** \`${{ github.event_name }}\` → \`${{ github.ref }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Resolved Version:** \`${{ steps.get_version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "🔖 Version Summary"
+          echo ""
+          echo "- Trigger: '${{ github.event_name }}' → '${{ github.ref }}'"
+          echo "- Build Type: '${{ inputs.buildType }}'"
+          echo "- Resolved Version: '${{ steps.get_version.outputs.version }}'"
 
           if [[ -z "${{ steps.get_version.outputs.version }}" ]]; then
-            echo "- ⚠️ No version was determined - check the 'Determine Version' step logs for details." >> $GITHUB_STEP_SUMMARY
+            echo "- ⚠️ No version was determined - check the 'Determine Version' step logs for details."
           elif [[ "${GITHUB_REF}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
-            echo "- 🏷️ This was a **tag push** - tag already exists by design."
+            echo "- 🏷️ This was a tag push — tag already exists by design."
           else
             if [[ "${{ steps.check_release.outputs.release_exists }}" == "true" ]]; then
-              echo "- ⚠️ GitHub Release with tag \`${{ steps.get_version.outputs.version }}\` **already exists** - run will fail on purpose to avoid overwrite." >> $GITHUB_STEP_SUMMARY
+              echo "- ⚠️ GitHub Release with tag '${{ steps.get_version.outputs.version }}' already exists — run will fail on purpose to avoid overwrite."
             else
-              echo "- ✅ Tag \`${{ steps.get_version.outputs.version }}\` **does not exist yet** - good to go!" >> $GITHUB_STEP_SUMMARY
+              echo "- ✅ Tag '${{ steps.get_version.outputs.version }}' does not exist yet — good to go!"
             fi
           fi
+
+      - name: 🚫 Block if Release Already Exists
+        if: ${{ inputs.buildType != 'preview' }}
+        run: |
+          if [[ "${{ steps.check_release.outputs.release_exists }}" == "true" ]]; then
+            echo "❌ A release already exists for version '${{ steps.get_version.outputs.version }}'. Stopping pipeline early."
+            exit 1
+          fi
+
+          echo "✅ No existing release detected — continuing pipeline."

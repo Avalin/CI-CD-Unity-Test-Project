@@ -27,20 +27,20 @@ case "$BUILD_TYPE" in
   release)
     INPUT_OVERRIDE="$INPUT_RETENTION_DAYS_RELEASE_OVERRIDE"
     REPO_VAR="$INPUT_RETENTION_DAYS_RELEASE_REPO_VAR"
-    PROJECT_DEFAULT_VALUE=$(echo "$PROJECT_DEFAULTS" | jq -r '.retentionDays.release // empty')
-    ACTION_DEFAULT_VALUE=$(echo "$ACTION_DEFAULTS" | jq -r '.retentionDays.release // empty')
+    PROJECT_DEFAULT_VALUE=$(echo "$PROJECT_DEFAULTS" | jq -r '.build.retentionDays.release // empty')
+    ACTION_DEFAULT_VALUE=$(echo "$ACTION_DEFAULTS" | jq -r '.build.retentionDays.release // empty')
     ;;
   release_candidate)
     INPUT_OVERRIDE="$INPUT_RETENTION_DAYS_RC_OVERRIDE"
     REPO_VAR="$INPUT_RETENTION_DAYS_RC_REPO_VAR"
-    PROJECT_DEFAULT_VALUE=$(echo "$PROJECT_DEFAULTS" | jq -r '.retentionDays.release_candidate // empty')
-    ACTION_DEFAULT_VALUE=$(echo "$ACTION_DEFAULTS" | jq -r '.retentionDays.release_candidate // empty')
+    PROJECT_DEFAULT_VALUE=$(echo "$PROJECT_DEFAULTS" | jq -r '.build.retentionDays.release_candidate // empty')
+    ACTION_DEFAULT_VALUE=$(echo "$ACTION_DEFAULTS" | jq -r '.build.retentionDays.release_candidate // empty')
     ;;
   preview | *)
     INPUT_OVERRIDE="$INPUT_RETENTION_DAYS_PREVIEW_OVERRIDE"
     REPO_VAR="$INPUT_RETENTION_DAYS_PREVIEW_REPO_VAR"
-    PROJECT_DEFAULT_VALUE=$(echo "$PROJECT_DEFAULTS" | jq -r '.retentionDays.preview // empty')
-    ACTION_DEFAULT_VALUE=$(echo "$ACTION_DEFAULTS" | jq -r '.retentionDays.preview // empty')
+    PROJECT_DEFAULT_VALUE=$(echo "$PROJECT_DEFAULTS" | jq -r '.build.retentionDays.preview // empty')
+    ACTION_DEFAULT_VALUE=$(echo "$ACTION_DEFAULTS" | jq -r '.build.retentionDays.preview // empty')
     ;;
 esac
 
