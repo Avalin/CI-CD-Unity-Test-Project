@@ -64,13 +64,11 @@ jobs:
             gh run download --name "$name" --dir "all-artifacts/${name}" || echo "⚠️ Failed to download $name"
           done
 
-      - name: 📜 Write Build Summary
-        id: summary
+      - name: ✅ Analyze Build Results
+        id: analyze
         run: |
-          echo "### 🧩 Unity Build Results Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Build Target | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "build_failed=0" >> "$GITHUB_OUTPUT"
+          echo "" > result_status.tmp
 
           GROUPED='${{ inputs.groupedBuildTargets }}'
           VERSION='${{ inputs.buildVersion }}'
@@ -82,7 +80,6 @@ jobs:
             label="$buildTarget"
 
             if [[ "$COMBINED" == "true" ]]; then
-              # Try standard combined path first, fallback to flat path
               if [ -d "all-artifacts/${PROJECT}-${VERSION}/${buildTarget}" ]; then
                 artifact_dir="all-artifacts/${PROJECT}-${VERSION}/${buildTarget}"
               elif [ -d "all-artifacts/${buildTarget}" ]; then
@@ -94,20 +91,35 @@ jobs:
               artifact_dir="all-artifacts/${PROJECT}-${VERSION}-${buildTarget}"
             fi
 
-            echo "🔍 Checking artifact path: $artifact_dir"
-
             if [ -n "$artifact_dir" ] && [ -n "$(find "$artifact_dir" -mindepth 1 -type f 2>/dev/null)" ]; then
-              echo "| $label | ✅ Build successful |" >> $GITHUB_STEP_SUMMARY
+              echo "$label:success" >> result_status.tmp
             else
-              echo "| $label | ❌ Build failed |" >> $GITHUB_STEP_SUMMARY
+              echo "$label:fail" >> result_status.tmp
+              echo "build_failed=1" >> "$GITHUB_OUTPUT"
             fi
           done
+
+      - name: 📝 Write Build Summary
+        id: summary
+        run: |
+          echo "### 🧩 Unity Build Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Target | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          while IFS=: read -r target result; do
+            if [[ "$result" == "success" ]]; then
+              echo "| $target | ✅ Build successful |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| $target | ❌ Build failed |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done < result_status.tmp
 
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📆 Combined Artifact" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "$COMBINED" == "true" ]]; then
+          if [[ "${{ inputs.combineRequested }}" == "true" ]]; then
             if [[ "${{ inputs.combinedCreated }}" == "true" ]]; then
               echo "- ✅ Combined artifact successfully created and uploaded." >> $GITHUB_STEP_SUMMARY
             else
@@ -117,8 +129,7 @@ jobs:
             echo "- ℹ️ Combined artifact was not requested." >> $GITHUB_STEP_SUMMARY
           fi
 
-          # Export output as true or false
-          if [[ $build_failed -eq 1 ]]; then
+          if [[ "${{ steps.analyze.outputs.build_failed }}" == "1" ]]; then
             echo "didAnyBuildsFail=true" >> $GITHUB_OUTPUT
           else
             echo "didAnyBuildsFail=false" >> $GITHUB_OUTPUT
