@@ -6,6 +6,9 @@ description: |
 on:
   workflow_call:
     inputs:
+      quietMode:
+        required: true
+        type: string
       projectName:
         required: true
         type: string

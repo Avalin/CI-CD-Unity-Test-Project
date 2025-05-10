@@ -33,6 +33,11 @@ on:
         required: false
         default: 'build'
         type: string
+      quietMode:
+        description: "Enable quiet mode to suppress uploads/logs unless tests fail"
+        type: string
+        required: false
+        default: 'false'
     secrets:
       DEPLOY_API_KEY: { required: false }
       ITCH_USERNAME: { required: false }
@@ -296,6 +301,7 @@ jobs:
     uses: ./.github/workflows/summarize-deploys.yml
     needs: deploy
     with:
+      quietMode: ${{ inputs.quietMode }}
       projectName: ${{ inputs.projectName }}
       buildVersion: ${{ inputs.buildVersion }}
       buildType: ${{ inputs.buildType }}

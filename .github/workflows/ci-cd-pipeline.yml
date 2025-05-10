@@ -115,6 +115,7 @@ jobs:
       combineArtifacts: ${{ needs.unpack_inputs.outputs.requiresCombined }}
       timeoutMinutes: ${{ fromJson(needs.unpack_inputs.outputs.timeoutMinutesBuild) }}
       retentionDays: ${{ fromJson(needs.unpack_inputs.outputs.retentionDays) }}
+      quietMode: ${{ needs.unpack_inputs.outputs.quietMode }}
     secrets:
       UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
       UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
@@ -144,6 +145,7 @@ jobs:
       buildTargets: ${{ inputs.buildTargets }}
       combineArtifacts: ${{ needs.unpack_inputs.outputs.requiresCombined }}
       skipPerBuildTargetArtifacts: ${{ needs.unpack_inputs.outputs.skipPerBuildTarget }}
+      quietMode: ${{ needs.unpack_inputs.outputs.quietMode }}
     secrets: inherit
 
   # ─────────────────────────────────────────────────────────────────────────────
@@ -169,6 +171,7 @@ jobs:
       buildTargets: ${{ inputs.buildTargets }}
       hasCombinedArtifacts: ${{ needs.unpack_inputs.outputs.requiresCombined }}
       artifactSource: build
+      quietMode: ${{ needs.unpack_inputs.outputs.quietMode }}
     secrets: inherit
 
   # ─────────────────────────────────────────────────────────────────────────────

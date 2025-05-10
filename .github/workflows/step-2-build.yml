@@ -164,10 +164,14 @@ jobs:
       retentionDays: ${{ inputs.retentionDays }}
 
   summarize_builds:
-    needs: [group_build_targets, build_targets, combine_builds]
+    needs: 
+      - group_build_targets
+      - build_targets
+      - combine_builds
     if: always()
     uses: ./.github/workflows/summarize-builds.yml
     with:
+      quietMode: ${{ inputs.quietMode }}
       projectName: ${{ inputs.projectName }}
       buildVersion: ${{ inputs.buildVersion }}
       groupedBuildTargets: ${{ needs.group_build_targets.outputs.validBuildTargets }}
@@ -176,7 +180,7 @@ jobs:
 
   fail_if_builds_failed:
     name: ⛔ Fail if Any Builds Failed
-    needs: [summarize_builds]
+    needs: summarize_builds
     runs-on: ubuntu-latest
     if: ${{ needs.summarize_builds.outputs.didAnyBuildsFail == 'true' }}
     steps:

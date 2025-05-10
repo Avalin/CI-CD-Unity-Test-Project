@@ -28,7 +28,12 @@ on:
         description: "Whether to skip uploading per-platform artifacts"
         type: string
         default: "false"
-        required: false      
+        required: false
+      quietMode:
+        description: "Enable quiet mode to suppress uploads/logs unless tests fail"
+        type: string
+        required: false
+        default: 'false'
     outputs:
       releaseErrorMessage:
         description: "Error message if release failed"
