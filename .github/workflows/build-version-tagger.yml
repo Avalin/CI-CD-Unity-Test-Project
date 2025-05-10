@@ -3,6 +3,9 @@ name: 🏷️ Version Tagger
 on:
   workflow_dispatch:
     inputs:
+      quietMode:
+        description: "Enable quiet mode to suppress uploads/logs unless tests fail"
+        required: true
       buildType:
         description: "Build type: preview | release_candidate | release"
         type: string
@@ -56,7 +59,7 @@ jobs:
     name: 📄 Summarize Tagging Info
     runs-on: ubuntu-latest
     needs: tag_resolver
-    if: always()
+    if: ${{ inputs.quietMode == 'false' }}
     steps:
       - name: Print Summary
         run: |
