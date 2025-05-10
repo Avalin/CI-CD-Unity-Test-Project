@@ -123,6 +123,7 @@ jobs:
           useGitLfsRepoVar: ${{ vars.USE_GIT_LFS }}
           editModePathRepoVar: ${{ vars.UNITY_TESTS_EDITMODE_PATH }}
           playModePathRepoVar: ${{ vars.UNITY_TESTS_PLAYMODE_PATH }}
+          quietModeInput: ${{ inputs.quietMode }}
           quietModeRepoVar: ${{ vars.UNITY_TESTS_QUIET_MODE }}
           excludeUnityTestsRepoVar: ${{ vars.EXCLUDE_UNITY_TESTS }}
 
