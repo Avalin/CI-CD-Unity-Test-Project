@@ -56,7 +56,6 @@ jobs:
           echo "useGitLfs=$(echo "$testData" | jq -r .useGitLfs)" >> "$GITHUB_OUTPUT"
           echo "editModePath=$(echo "$testData" | jq -r .editModePath)" >> "$GITHUB_OUTPUT"
           echo "playModePath=$(echo "$testData" | jq -r .playModePath)" >> "$GITHUB_OUTPUT"
-          echo "quietMode=$(echo "$testData" | jq -r .quietMode)" >> "$GITHUB_OUTPUT"
 
           # Metadata Config
           echo "projectName=$(echo "$meta" | jq -r .projectName)" >> "$GITHUB_OUTPUT"
@@ -67,6 +66,7 @@ jobs:
           echo "retentionDays=$(echo "$meta" | jq -r .retentionDays)" >> "$GITHUB_OUTPUT"
           echo "timeoutMinutesTests=$(echo "$meta" | jq -r .timeoutMinutesTests)" >> "$GITHUB_OUTPUT"
           echo "timeoutMinutesBuild=$(echo "$meta" | jq -r .timeoutMinutesBuild)" >> "$GITHUB_OUTPUT"
+          echo "quietMode=$(echo "$meta" | jq -r .quietMode)" >> "$GITHUB_OUTPUT"
 
           # Artifacts Config
           echo "requiresCombined=$(echo "$artifact" | jq -r .requiresCombined)" >> "$GITHUB_OUTPUT"
