@@ -155,7 +155,7 @@ jobs:
     needs:
       - prepare_metadata
       - resolve_build_version
-    if: always()
+    if:  ${{ needs.prepare_metadata.outputs.quietMode == 'false' }}
     uses: ./.github/workflows/summarize-metadata.yml
     with:
       useGitLfs: ${{ needs.prepare_metadata.outputs.useGitLfs }}
